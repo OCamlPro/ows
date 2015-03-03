@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Opam Weather Service</title>
+	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/bootstrap.min.css" rel="stylesheet" media="screen">
+	<link rel="stylesheet" href="/css/bootstrap-table.min.css">
+	<!--style>
+	  table .collapse.in {
+		display : table-row;
+	  }
+	</style-->
+  </head>
+  <body>
+    <div class="container">
+      <p>Total number of package Names: {{ totalnames }}</p>
+      <p>Total number of Broken packages: {{ broken }}</p>
+      <p>Total number of Partially Broken packages: {{ partial }}</p>
+      <p>Total number of Correct packages: {{ correct }}</p>
+      <table id="myTable" data-toggle="table"
+		     data-classes="table table-hover table-condensed"
+			 data-striped="true"
+			 data-show-columns="true"
+		     data-search="true"
+			 >
+		<thead>
+		  <tr><th>Name</th><th>version</th>{% for s in switches %}<th>{{s}}</th>{% endfor %}</tr>
+		</thead>
+		<tbody>
+		{% for name,versions in report.iteritems() %}
+		  {% set outer_loop = loop %}
+		  <tr class="clickable" id="row{{outer_loop.index}}" data-toggle="collapse" data-target=".row{{outer_loop.index}}">
+			<td><a href="packages/{{name}}.html" data-toggle="modal" data-target="#myModal">{{name}}</a></td>
+			<td></td>
+			{% for s in switches %}
+			  <td>
+			  {% if summary[name][s] is defined %}
+				{% if summary[name][s] == 'broken' %}
+				  <span style="color:red">
+					<span class="glyphicon glyphicon-fire"></span>
+					<span class="glyphicon glyphicon-fire"></span>
+				  </span>
+				{% elif summary[name][s] == 'partial' %}
+				  <span style="color:red">
+					<span class="glyphicon glyphicon-fire"></span>
+				  </span>
+				{% elif summary[name][s] == 'ok' %}
+				  <span style="color:green">
+					<span class="glyphicon glyphicon-ok"></span>
+				  </span>
+				{% endif %}
+			  {% else %}
+				<span class="glyphicon glyphicon-option-horizontal"></span>
+			  {% endif %}
+			  </td>
+			{% endfor %}
+		  </tr>
+		  {% for version, result in versions.iteritems() %}
+		  <tr class="collapse row{{outer_loop.index}}">
+		  <!--tr class="row{{outer_loop.index}}"-->
+			<td></td>
+			<td>{{version}}</td>
+			{% for s in switches %}
+			  <td>{{result[s]}}</td>
+			{% endfor %}
+		  </tr>
+		  {% endfor %}
+	    {% endfor %}
+		</tbody>
+      </table>
+    </div>
+
+	<div id="myModal" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+	  <div class="modal-dialog modal-lg">
+		<div class="modal-content">
+		  <div class="modal-body"/>
+		</div>
+	  </div>
+	</div>
+
+	<script src="/js/jquery.min.js"></script>
+	<script type="text/javascript">
+	$("#myModal").on("show.bs.modal", function(e) {
+		var link = $(e.relatedTarget);
+		$(this).find(".modal-body").load(link.attr("href"));
+	});
+	$("#myTable").on("click-row.bs.table", function (e, row, $element) {
+	  $("."+row._id).toggle();
+	  $("."+row._id).collapse();
+	});
+	$('body').on('hidden.bs.modal', '.modal', function () {
+		$(this).removeData('bs.modal');
+	});
+    </script>
+	<script src="/js/bootstrap.min.js"></script>
+    <script src="/js/bootstrap-table.min.js"></script>
+
+  </body>
+
+</html>

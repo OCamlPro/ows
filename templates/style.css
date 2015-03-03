@@ -1,0 +1,38 @@
+body {
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    font-family: sans-serif;
+}
+table {
+    margin: auto;
+}
+th:first-child {
+    text-align: left;
+}
+table:first-child {
+    border-bottom: 3px solid green;
+}
+td.ok {
+    background-color: #8e8;
+    text-align: center;
+}
+td a {
+    text-decoration: none;
+    text-color: black;
+    text-align: center;
+}
+td.bad {
+    background-color: #f63;
+    text-align: center;
+}
+pre {
+    border: 1px solid grey;
+    padding: 10px;
+}
+
+.container {
+  max-width: 500px;
+  padding-top: 100px;
+}
+

@@ -1,0 +1,37 @@
+<div class="modal-content">
+  <div class="modal-header">
+	<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+	<h4 class="modal-title" id="myModalLabel">{{name}}</h4>
+  </div>
+
+  <table class="itemsTable table table-striped table-condensed table-hover" data-toggle="table"
+	     data-classes="table table-hover table-condensed">
+	<thead>
+	  <tr><th>version</th>{% for s in switches %}<th>{{s}}</th>{% endfor %}</tr>
+	</thead>
+	<tbody>
+	{% for version, result in versions.iteritems() %}
+	  <tr {% if not ("broken" in result.values()) %}class="collapse row"{% endif %}>
+		<td>{{version}}</td>
+		{% for s in switches %}
+		  <td>{{result[s]}}</td>
+		{% endfor %}
+	  </tr>
+	{% endfor %}
+	</tbody>
+  </table>
+
+  {% for version, result in versions.iteritems() %}
+	{% for s in switches %}
+	  {% if result[s] == 'broken' %}
+		<div >
+		  Version {{version}} cannot be compiled with OCaml {{ s }} because
+		</div>
+	  {% endif %}
+	{% endfor %}
+  {% endfor %}
+
+  <div class="modal-footer">
+	<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+  </div>
+</div>
