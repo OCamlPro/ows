@@ -1,53 +1,58 @@
 <div class="modal-header">
   <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-  <h4 class="modal-title" id="myModalLabel">{{name}}</h4>
+  <h4 class="modal-title" id="myModalLabel">{{name}} (ows : {{ date }})</h4>
 </div>
 
-<table id="modal-table" class="display" cellspacing="0" width="100%">
-  <thead>
-	<tr><th>version</th>{% for s in switches %}<th>{{s}}</th>{% endfor %}</tr>
-  </thead>
-  <tbody>
-  {% for version, result in versions.iteritems() %}
-  <tr>
-	<td>{{version}}</td>
-	{% for s in switches %}
-	  <td>
-		{% if result[s] is defined %}
-		  {% if result[s] == 'broken' %}
-			<span style="color:red">
-			  <span class="glyphicon glyphicon-fire"></span>
-			  <span class="glyphicon glyphicon-fire"></span>
-			</span>
-			<button class="btn btn-xs" data-toggle="collapse" data-remote="#p{{version}}-{{s}}">
-			  <span class="glyphicon glyphicon-zoom-in"></span>Details
-			</button>
-		  {% elif result[s] == 'ok' %}
-			<span style="color:green">
-			  <span class="glyphicon glyphicon-ok"></span>
-			</span>
+<div class="modal-body">
+  <table id="modal-table" class="display" cellspacing="0" width="100%">
+	<thead>
+	  <tr><th>version</th>{% for s in switches %}<th>{{s}}</th>{% endfor %}</tr>
+	</thead>
+	<tbody>
+	{% for version, result in versions.iteritems() %}
+	<tr>
+	  <td>{{version}}</td>
+	  {% for s in switches %}
+		<td>
+		  {% if result[s] is defined %}
+			{% if result[s][0] == 'broken' %}
+			  <span style="color:red">
+				<span class="glyphicon glyphicon-fire"></span>
+				<span class="glyphicon glyphicon-fire"></span>
+			  </span>
+			  <a class="btn btn-xs details" href="#p{{version}}-{{s}}">
+				<span class="glyphicon glyphicon-zoom-in"></span>Details
+			  </a>
+			{% elif result[s][0] == 'ok' %}
+			  <span style="color:green">
+				<span class="glyphicon glyphicon-ok"></span>
+			  </span>
+			{% endif %}
+		  {% else %}
+			  <span class="glyphicon glyphicon-option-horizontal"
+					data-toggle="tooltip"
+					title="Version {{version}} is not available for OCaml {{s}}"></span>
 		  {% endif %}
-		{% else %}
-			<span class="glyphicon glyphicon-option-horizontal"
-				  data-toggle="tooltip"
-				  title="Version {{version}} is not available for OCaml {{s}}"></span>
-		{% endif %}
-	  </td>
+		</td>
+	  {% endfor %}
+	</tr>
 	{% endfor %}
-  </tr>
-  {% endfor %}
-  </tbody>
-</table>
+	</tbody>
+  </table>
 
-{% for version, result in versions.iteritems() %}
-  {% for s in switches %}
-	{% if result[s] == 'broken' %}
-	  <div id="p{{version}}-{{s}}" class="collapse in">
-		Version {{version}} cannot be compiled with OCaml {{ s }} because
-	  </div>
-	{% endif %}
+  {% for version, result in versions.iteritems() %}
+	{% for s in switches %}
+	  {% if result[s] is defined %}
+		{% if result[s][0] == 'broken' %}
+		  <div id="p{{version}}-{{s}}" class="collapse in">
+			Version {{version}} cannot be compiled with OCaml {{ s }} because
+			{{ result[s][1] }}
+		  </div>
+		{% endif %}
+	  {% endif %}
+	{% endfor %}
   {% endfor %}
-{% endfor %}
+</div>
 
 <div class="modal-footer">
   <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>

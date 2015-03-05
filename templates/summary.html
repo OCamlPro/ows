@@ -6,13 +6,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/bootstrap.min.css" rel="stylesheet" media="screen">
 	<link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
   </head>
   <body>
+
+	  <nav class="navbar navbar-default" role="banner">
+		<div class="container">
+		  <div class="navbar-header">
+			<button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".navbar-collapse">
+			  <span class="sr-only">Toggle navigation</span>
+			  <span class="icon-bar"></span>
+			  <span class="icon-bar"></span>
+			  <span class="icon-bar"></span>
+			</button>
+			<a href="/" class="navbar-brand">OWS</a>
+		  </div>
+		  <nav class="collapse navbar-collapse" role="navigation">
+			<ul class="nav navbar-nav">
+			  <li><a href="#">Backlog</a></li>
+			  <li><a href="#">About</a></li>
+			</ul>
+		  </nav>
+		</div>
+	  </nav>
+
+	  <div class="container">
+		  <div class="row">
+			<div class="col-md-7">
+			  <h1>OCaml Weather Service
+				<p class="lead">Powered by opam/dose</p>
+			  </h1>
+			<p>
+			  This service runs reguat regular intervals an evaluation of the solvability of
+			  dependencies in the official OPAM repository, for 4 stable releases of
+			  OCaml.
+			</p>
+		  </div>
+		  <div class="col-md-5">
+			  <div class="well well-lg"> 
+				<div class="row">
+				  <div class="col-sm-12">
+					<h4>Status of the Repository ({{summary['date']}})</h4>
+					<ol>
+					  <li>Package Names: {{ summary['totalnames'] }}</li>
+					  <li>Broken Packages: {{ summary['broken'] }}</li>
+					  <li>Partially Broken Packages: {{ summary['partial'] }}</li>
+					  <li>Correct Packages: {{ summary['correct'] }}</li>
+					</ol>
+					<p><a class="btn btn-social-icon btn-sm btn-github" href="https://github.com/ocaml/opam-repository/tree/{{summary['commit']}}"><i class="fa fa-github"></i> View Commit Tree</a></p>
+				  </div>
+				</div>
+			  </div>
+		  </div>
+		</div> 
+	</div><!--/container-->
+
     <div class="container">
-      <p>Total number of package Names: {{ summary['totalnames'] }}</p>
-      <p>Total number of Broken packages: {{ summary['broken'] }}</p>
-      <p>Total number of Partially Broken packages: {{ summary['partial'] }}</p>
-      <p>Total number of Correct packages: {{ summary['correct'] }}</p>
       <table id="package-table" class="table table-hover table-condensed" >
 		<thead>
 		  <tr><th>Name</th><th>status</th>{% for s in switches %}<th>{{s}}</th>{% endfor %}</tr>
@@ -84,14 +133,10 @@
 	<script src="/js/bootstrap.min.js"></script>
 	<script type="text/javascript" charset="utf8" src="/js/jquery.dataTables.js"></script>
 	<script type="text/javascript">
-    <!-- populate the modal with the content of the href -->
-//	$("#myModal").on("show.bs.modal", function(e) {
-//		var link = $(e.relatedTarget);
-//		$(this).find(".modal-body").load(link.attr("href"));
-//	});
-
+    // populate the modal with the content of the href
     $('#myModal').on('loaded.bs.modal', function (e) {
         $(this).find('#modal-table').DataTable({
+		  "bInfo" : false,
 		  "retrieve": true,
 		  "scrollY": "200px",
           "scrollCollapse": true,
@@ -102,15 +147,30 @@
           ],
 		  "order": [[ 0, "desc" ]],
         });
-		$(this).find(".collapse").collapse();
+		var m = $(this);
+		var c = $(this).find(".collapse");
+		c.collapse();
+		$(this).find('.details').click(function(e){
+		    //e.preventDefault();
+			var href = $(this).attr("href");
+			console.log(href);
+			console.log(c);
+			console.log($(c).find("#p108.00.01-3.12.1"));
+			var ele = document.getElementById("p108.00.01-3.12.1");
+			$(ele).toggle();
+			toggle(ele);
+			console.log(ele);
+			//$(m).find("#p108.00.01-3.12.1").toggle();
+		});
     });
 
-    <!-- destroy the modal object when closed -->
+    // destroy the modal object when closed
 	$('body').on('hidden.bs.modal', '.modal', function () {
 		$(this).removeData('bs.modal');
 	});
 
 	$(document).ready(function() {
+	    // init the dataTables object in the main page
 		$('#package-table').DataTable( {
 		  "columnDefs": [
 			{ "orderable": false, "targets": [{{ range(1,(switches|count) + 1)|join(", ") }}] }

@@ -39,10 +39,11 @@ def parse(f):
         d['total_packages'] = data['total_packages']
         d['ocaml_switch'] = data['ocaml_switch']
         d['date'] = data['date']
+        d['commit'] = data['commit']
         d['report'] = {}
         for name, group in groupby(data['report'], lambda x: x['package']):
             for p in group:
-              #  print "%s => %s." % (name, p)
+                #print "%s => %s." % (name, p)
                 if name in d['report'] :
                     d['report'][name].append(p)
                 else :
@@ -54,9 +55,11 @@ def aggregate(d):
     aggregatereport = {}
     summary = {}
     date = None
+    commit = None
     for report in d :
         if report :
             date = report['date']
+            commit = report['commit']
             switch = report['ocaml_switch']
             for name, l in report['report'].iteritems() :
                 if name not in aggregatereport :
@@ -76,9 +79,10 @@ def aggregate(d):
 
                 for package in l :
                     ver = package['version']
-                    s = {switch:package['status']}
+                    r = package['reasons'] if package['status'] == "broken" else ""
+                    s = {switch:(package['status'],r)}
                     if ver in aggregatereport[name] :
-                        aggregatereport[name][ver][switch] = package['status']
+                        aggregatereport[name][ver][switch] = (package['status'],r)
                     else :
                         aggregatereport[name][ver] = s
 
@@ -88,6 +92,8 @@ def aggregate(d):
     summaryreport['partial'] = 0
     summaryreport['correct'] = 0
     summaryreport['report'] = summary
+    summaryreport['date'] = date
+    summaryreport['commit'] = commit
 
     switchnumber = len(d)
     for name,switches in summary.iteritems() :
@@ -104,7 +110,7 @@ def aggregate(d):
             summaryreport['partial'] += 1
             summaryreport['report'][name]['status'] = "partial"
 
-    return date,aggregatereport,summaryreport
+    return aggregatereport,summaryreport
 
 # total number of package names on all Switch
 # total number of packages for each Switch
@@ -117,7 +123,7 @@ def html_package(aggregatereport,switches,date):
     j2_env = Environment(loader=FileSystemLoader(THIS_DIR),trim_blocks=True)
     for name,versions in aggregatereport.iteritems() :
         template = j2_env.get_template('templates/package.html')
-        output = template.render({'name' : name, 'versions' : versions, 'switches': switches})
+        output = template.render({'name' : name, 'versions' : versions, 'switches': switches, 'date' : date})
         dirname = os.path.join("html",str(date),'packages')
         if not os.path.exists(dirname) :
             os.makedirs(dirname)
@@ -125,25 +131,14 @@ def html_package(aggregatereport,switches,date):
         with open(fname, 'w') as f:
             f.write(output)
 
-def html_summary(aggregatereport,summaryreport,switches,date):
+def html_summary(aggregatereport,summaryreport,switches):
     j2_env = Environment(loader=FileSystemLoader(THIS_DIR),trim_blocks=True)
     template = j2_env.get_template('templates/summary.html')
     output = template.render({'report' : aggregatereport, 'summary' : summaryreport, 'switches': switches})
-    dirname = os.path.join("html",str(date))
+    dirname = os.path.join("html",str(summaryreport['date']))
     if not os.path.exists(dirname) :
         os.makedirs(dirname)
     fname = os.path.join(dirname,"summary.html")
-    with open(fname, 'w') as f:
-        f.write(output)
- 
-def html_weather(report):
-    j2_env = Environment(loader=FileSystemLoader(THIS_DIR),trim_blocks=True)
-    template = j2_env.get_template('templates/report.html')
-    output = template.render(report)
-    dirname = os.path.join("html",str(report['date']))
-    if not os.path.exists(dirname) :
-        os.makedirs(dirname)
-    fname = os.path.join(dirname,"report-"+report['ocaml_switch']+".html")
     with open(fname, 'w') as f:
         f.write(output)
  
@@ -158,7 +153,7 @@ def main():
     reportdir = args.reportdir[0]
     picklefile = os.path.join(reportdir,'data.pickle')
     if os.path.exists(picklefile) :
-        (switches,date,ar,sr) = pickle.load(open(picklefile,'r'))
+        (switches,ar,sr) = pickle.load(open(picklefile,'r'))
     else :
         report = []
         switches = []
@@ -169,19 +164,18 @@ def main():
                 dataset = open(fname)
                 r = parse(dataset)
                 if r : 
-                    #html_weather(r)
                     switches.append(r['ocaml_switch'])
                     report.append(r)
                 dataset.close()
 
         print "Aggregate"
-        (date,ar,sr) = aggregate(report)
-        pickle.dump((switches,date,ar,sr),open(picklefile,'wb'))
+        (ar,sr) = aggregate(report)
+        pickle.dump((switches,ar,sr),open(picklefile,'wb'))
 
     print "Packages"
-    html_package(ar,switches,date)
+    html_package(ar,switches,sr['date'])
     print "Summary"
-    html_summary(ar,sr,switches,date)
+    html_summary(ar,sr,switches)
     print "Done"
 
 if __name__ == '__main__':
