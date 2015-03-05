@@ -1,6 +1,19 @@
 #!/usr/bin/python
 
 import yaml
+try :
+    from yaml import CBaseLoader as yamlLoader
+except ImportError:
+    from yaml import BaseLoader as yamlLoader
+    warning('YAML C-library not available, falling back to python')
+
+try :
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    warning('Pickle C-library not available, falling back to python')
+
+import fnmatch
 import os
 import argparse
 import csv
@@ -18,7 +31,7 @@ from jinja2 import Environment, FileSystemLoader
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def parse(f):
-    data = yaml.load(f)
+    data = yaml.load(f, Loader=yamlLoader)
     d = {}
     if 'broken-packages' in data : 
         data = { x.replace('-', '_'): data[x] for x in data.keys() }
@@ -39,7 +52,8 @@ def parse(f):
 #    { pippo : [ { 1.1 : { 4.01 : ok, 4.02 : broken } }, { 1.2 : { 4.01 : ok, 4.02 : broken } }, ] }
 def aggregate(d):
     aggregatereport = {}
-    summaryreport = {}
+    summary = {}
+    date = None
     for report in d :
         if report :
             date = report['date']
@@ -47,18 +61,18 @@ def aggregate(d):
             for name, l in report['report'].iteritems() :
                 if name not in aggregatereport :
                     aggregatereport[name] = {}
-                    summaryreport[name] = {}
+                    summary[name] = {}
 
                 status = {'ok' : 0, 'broken' : 0}
                 for s,group in groupby(l, lambda p: p['status']) :
                     status[s] = len(list(group))
 
                 if status['ok'] == len(l) :
-                    summaryreport[name][switch] = "ok"
+                    summary[name][switch] = "ok"
                 elif status['broken'] == len(l) :
-                    summaryreport[name][switch] = "broken"
+                    summary[name][switch] = "broken"
                 else :
-                    summaryreport[name][switch] = "partial"
+                    summary[name][switch] = "partial"
 
                 for package in l :
                     ver = package['version']
@@ -67,6 +81,28 @@ def aggregate(d):
                         aggregatereport[name][ver][switch] = package['status']
                     else :
                         aggregatereport[name][ver] = s
+
+    summaryreport = {}
+    summaryreport['totalnames'] = len(aggregatereport)
+    summaryreport['broken'] = 0
+    summaryreport['partial'] = 0
+    summaryreport['correct'] = 0
+    summaryreport['report'] = summary
+
+    switchnumber = len(d)
+    for name,switches in summary.iteritems() :
+        ok,bad = [], []
+        for x in switches.values() :
+            ok.append(x) if x == "ok" else bad.append(x)
+        if len(ok) == switchnumber or len(bad) == 0 :
+            summaryreport['correct'] += 1
+            summaryreport['report'][name]['status'] = "ok"
+        elif len(bad) == switchnumber :
+            summaryreport['broken'] += 1
+            summaryreport['report'][name]['status'] = "broken"
+        else :
+            summaryreport['partial'] += 1
+            summaryreport['report'][name]['status'] = "partial"
 
     return date,aggregatereport,summaryreport
 
@@ -119,23 +155,34 @@ def main():
     parser.add_argument('reportdir', type=str, nargs=1, help="dataset")
     args = parser.parse_args()
 
-    report = []
-    switches = []
-    for root, dirs, files in os.walk(args.reportdir[0], topdown=False):
-        for name in files:
-            fname = os.path.join(root, name)
-            #print(fname)
-            dataset = open(fname)
-            r = parse(dataset)
-            if r : 
-                html_weather(r)
-                switches.append(r['ocaml_switch'])
-                report.append(r)
-            dataset.close()
+    reportdir = args.reportdir[0]
+    picklefile = os.path.join(reportdir,'data.pickle')
+    if os.path.exists(picklefile) :
+        (switches,date,ar,sr) = pickle.load(open(picklefile,'r'))
+    else :
+        report = []
+        switches = []
+        for root, dirs, files in os.walk(reportdir, topdown=False):
+            for name in fnmatch.filter(files, "*.yaml"):
+                fname = os.path.join(root, name)
+                print "Parse ", fname
+                dataset = open(fname)
+                r = parse(dataset)
+                if r : 
+                    #html_weather(r)
+                    switches.append(r['ocaml_switch'])
+                    report.append(r)
+                dataset.close()
 
-    date,ar,sr = aggregate(report)
+        print "Aggregate"
+        (date,ar,sr) = aggregate(report)
+        pickle.dump((switches,date,ar,sr),open(picklefile,'wb'))
+
+    print "Packages"
     html_package(ar,switches,date)
+    print "Summary"
     html_summary(ar,sr,switches,date)
+    print "Done"
 
 if __name__ == '__main__':
     main()

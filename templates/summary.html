@@ -5,67 +5,70 @@
 	<meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/bootstrap.min.css" rel="stylesheet" media="screen">
-	<link rel="stylesheet" href="/css/bootstrap-table.min.css">
-	<!--style>
-	  table .collapse.in {
-		display : table-row;
-	  }
-	</style-->
+	<link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
   </head>
   <body>
     <div class="container">
-      <p>Total number of package Names: {{ totalnames }}</p>
-      <p>Total number of Broken packages: {{ broken }}</p>
-      <p>Total number of Partially Broken packages: {{ partial }}</p>
-      <p>Total number of Correct packages: {{ correct }}</p>
-      <table id="myTable" data-toggle="table"
-		     data-classes="table table-hover table-condensed"
-			 data-striped="true"
-			 data-show-columns="true"
-		     data-search="true"
-			 >
+      <p>Total number of package Names: {{ summary['totalnames'] }}</p>
+      <p>Total number of Broken packages: {{ summary['broken'] }}</p>
+      <p>Total number of Partially Broken packages: {{ summary['partial'] }}</p>
+      <p>Total number of Correct packages: {{ summary['correct'] }}</p>
+      <table id="package-table" class="table table-hover table-condensed" >
 		<thead>
-		  <tr><th>Name</th><th>version</th>{% for s in switches %}<th>{{s}}</th>{% endfor %}</tr>
+		  <tr><th>Name</th><th>status</th>{% for s in switches %}<th>{{s}}</th>{% endfor %}</tr>
 		</thead>
 		<tbody>
-		{% for name,versions in report.iteritems() %}
-		  {% set outer_loop = loop %}
-		  <tr class="clickable" id="row{{outer_loop.index}}" data-toggle="collapse" data-target=".row{{outer_loop.index}}">
-			<td><a href="packages/{{name}}.html" data-toggle="modal" data-target="#myModal">{{name}}</a></td>
-			<td></td>
+		{% for name,versions in summary['report'].iteritems() %}
+		  <tr>
+			<td><a data-toggle="modal" data-target="#myModal" data-remote="packages/{{name}}.html">{{name}}</a></td>
+			<td>
+			  	{% if summary['report'][name]['status'] == 'broken' %}
+				<span style="color:red"
+				      data-toggle="tooltip"
+					  title="This package is not usable with any compiler">
+					<span class="glyphicon glyphicon glyphicon-thumbs-down"></span>
+				  </span>
+				{% elif summary['report'][name]['status'] == 'partial' %}
+				  <span style="color:red"
+					    data-toggle="tooltip"
+						title="Some versions of this package are not installable">
+					<span class="glyphicon glyphicon-warning-sign"></span>
+				  </span>
+				{% elif summary['report'][name]['status'] == 'ok' %}
+				  <span style="color:green">
+					<span class="glyphicon glyphicon-thumbs-up"></span>
+				  </span>
+				{% endif %}
+			</td>
 			{% for s in switches %}
 			  <td>
-			  {% if summary[name][s] is defined %}
-				{% if summary[name][s] == 'broken' %}
-				  <span style="color:red">
+			  {% if summary['report'][name][s] is defined %}
+				{% if summary['report'][name][s] == 'broken' %}
+				  <span style="color:red"
+					    data-toggle="tooltip"
+						title="This package cannot be used with OCaml {{s}}">
 					<span class="glyphicon glyphicon-fire"></span>
 					<span class="glyphicon glyphicon-fire"></span>
 				  </span>
-				{% elif summary[name][s] == 'partial' %}
-				  <span style="color:red">
+				{% elif summary['report'][name][s] == 'partial' %}
+				  <span style="color:red"
+					    data-toggle="tooltip"
+					    title="Some versions of this package cannot be used with OCaml {{s}}">
 					<span class="glyphicon glyphicon-fire"></span>
 				  </span>
-				{% elif summary[name][s] == 'ok' %}
+				{% elif summary['report'][name][s] == 'ok' %}
 				  <span style="color:green">
 					<span class="glyphicon glyphicon-ok"></span>
 				  </span>
 				{% endif %}
 			  {% else %}
-				<span class="glyphicon glyphicon-option-horizontal"></span>
+				  <span class="glyphicon glyphicon-option-horizontal"
+					    data-toggle="tooltip"
+					    title="This package is not available for OCaml {{s}}"></span>
 			  {% endif %}
 			  </td>
 			{% endfor %}
 		  </tr>
-		  {% for version, result in versions.iteritems() %}
-		  <tr class="collapse row{{outer_loop.index}}">
-		  <!--tr class="row{{outer_loop.index}}"-->
-			<td></td>
-			<td>{{version}}</td>
-			{% for s in switches %}
-			  <td>{{result[s]}}</td>
-			{% endfor %}
-		  </tr>
-		  {% endfor %}
 	    {% endfor %}
 		</tbody>
       </table>
@@ -73,28 +76,49 @@
 
 	<div id="myModal" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
 	  <div class="modal-dialog modal-lg">
-		<div class="modal-content">
-		  <div class="modal-body"/>
-		</div>
+		<div class="modal-content"></div>
 	  </div>
 	</div>
 
 	<script src="/js/jquery.min.js"></script>
+	<script src="/js/bootstrap.min.js"></script>
+	<script type="text/javascript" charset="utf8" src="/js/jquery.dataTables.js"></script>
 	<script type="text/javascript">
-	$("#myModal").on("show.bs.modal", function(e) {
-		var link = $(e.relatedTarget);
-		$(this).find(".modal-body").load(link.attr("href"));
-	});
-	$("#myTable").on("click-row.bs.table", function (e, row, $element) {
-	  $("."+row._id).toggle();
-	  $("."+row._id).collapse();
-	});
+    <!-- populate the modal with the content of the href -->
+//	$("#myModal").on("show.bs.modal", function(e) {
+//		var link = $(e.relatedTarget);
+//		$(this).find(".modal-body").load(link.attr("href"));
+//	});
+
+    $('#myModal').on('loaded.bs.modal', function (e) {
+        $(this).find('#modal-table').DataTable({
+		  "retrieve": true,
+		  "scrollY": "200px",
+          "scrollCollapse": true,
+		  "bFilter": false,
+          "paging":         false,
+          "columnDefs": [
+			{ "orderable": false, "targets": [{{ range(1,(switches|count) + 1)|join(", ") }}] }
+          ],
+		  "order": [[ 0, "desc" ]],
+        });
+		$(this).find(".collapse").collapse();
+    });
+
+    <!-- destroy the modal object when closed -->
 	$('body').on('hidden.bs.modal', '.modal', function () {
 		$(this).removeData('bs.modal');
 	});
+
+	$(document).ready(function() {
+		$('#package-table').DataTable( {
+		  "columnDefs": [
+			{ "orderable": false, "targets": [{{ range(1,(switches|count) + 1)|join(", ") }}] }
+		  ]
+		} );
+	} );
+
     </script>
-	<script src="/js/bootstrap.min.js"></script>
-    <script src="/js/bootstrap-table.min.js"></script>
 
   </body>
 

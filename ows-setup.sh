@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+#set -x
 
 #################### Config Variables ########################
 
@@ -38,13 +38,16 @@ function distcheck {
   local commit=$2
 
   for version in ${VERSIONS}; do
-    echo "mkdir ${REPORTDIR}/${date}"
+  #echo "mkdir ${REPORTDIR}/${date}"
     mkdir -p ${REPORTDIR}/${date}
     ${OPAM} config cudf-universe --switch ${version} > ${TMPDIR}/report-${version}.pef
     echo "ocaml-switch: ${version}" > ${REPORTDIR}/${date}/report-${version}.yaml
     echo "date: ${date}" >> ${REPORTDIR}/${date}/report-${version}.yaml
     echo "commit: ${commit}" >> ${REPORTDIR}/${date}/report-${version}.yaml
-    ${DISTCHECK} pef://${TMPDIR}/report-${version}.pef --summary -s -f >> ${REPORTDIR}/${date}/report-${version}.yaml
+    ${DISTCHECK} pef://${TMPDIR}/report-${version}.pef --summary -s -f -e >> ${REPORTDIR}/${date}/report-${version}.yaml
+    mv ${TMPDIR}/report-${version}.pef ${REPORTDIR}/${date}/
+#    gzip ${REPORTDIR}/${date}/report-${version}.yaml
+#    gzip ${REPORTDIR}/${date}/report-${version}.pef
   done
 
 }
@@ -66,11 +69,15 @@ function rewind_git {
 }
 
 function replay {
+  local currentdate=`date +%Y-%m-%d`
+  local origin="2012-05-19"
+  if [ ! -z $1 ]; then
+    origin=$1
+  fi
+
   git --git-dir ${OPAMREPO}/.git fetch
 
   # Creation of opam-repository
-  local origin="2012-05-19"
-  local currentdate=`date +%Y-%m-%d`
   local range=$(daterange ${origin} ${currentdate})
 
   for date in $range; do
@@ -128,4 +135,10 @@ EOF
   done
 }
 
-replay
+function html {
+  cp js css fonts html
+}
+
+origin="2015-02-27"
+origin="2012-05-19"
+replay $origin
