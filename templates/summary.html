@@ -5,6 +5,7 @@
 	<meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/bootstrap.min.css" rel="stylesheet" media="screen">
+	<link rel="stylesheet" href="/css/bootstrap.vertical-tabs.min.css">
 	<link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
 	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
   </head>
@@ -124,7 +125,7 @@
     </div>
 
 	<div id="myModal" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
-	  <div class="modal-dialog modal-lg">
+	  <div class="modal-dialog modal-lg" style="height:80vh">
 		<div class="modal-content"></div>
 	  </div>
 	</div>
@@ -148,19 +149,23 @@
 		  "order": [[ 0, "desc" ]],
         });
 		var m = $(this);
-		var c = $(this).find(".collapse");
-		c.collapse();
-		$(this).find('.details').click(function(e){
+		console.log($(this).find("#modal-tab a"));
+		$(this).find("#modal-tab a").click(function(e){
+		  var href = $(this).attr("href");
+		  $(m).find(".collapse.in").collapse('hide');
+		  $(this).addClass('active');
+		  $(m).find(href).tab().show();
+		});
+		$(this).find('.reasons').click(function(e){
 		    //e.preventDefault();
 			var href = $(this).attr("href");
-			console.log(href);
-			console.log(c);
-			console.log($(c).find("#p108.00.01-3.12.1"));
-			var ele = document.getElementById("p108.00.01-3.12.1");
-			$(ele).toggle();
-			toggle(ele);
-			console.log(ele);
-			//$(m).find("#p108.00.01-3.12.1").toggle();
+			console.log($(m).find("#modal-tab a[href='#details']"));
+			console.log($(m).find("#modal-tab a[href='#overview']"));
+			$(m).find('#overview').tab().hide();
+			//$(m).find('#details').tab().show();
+			$(m).find("#modal-tab a[href='#details']").tab('show');
+			$(m).find(".collapse.in").collapse('hide');
+			$(m).find(href).collapse('toggle');
 		});
     });
 

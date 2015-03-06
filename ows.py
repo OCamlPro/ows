@@ -80,9 +80,28 @@ def aggregate(d):
                 for package in l :
                     ver = package['version']
                     r = package['reasons'] if package['status'] == "broken" else ""
-                    s = {switch:(package['status'],r)}
+                    direct = False
+                    conflicts,missings = [],[]
+                    if 'reasons' in package :
+                        for p in package['reasons'] :
+                            if 'missing' in p :
+                                if p['missing']['pkg']['package'] == name :
+                                    direct = True
+                                    unsatdep = p['missing']['pkg']['unsat-dependency']
+                                    missings.append(unsatdep)
+                                    print name," Directly broken missing"
+                            if 'conflict' in p :
+                                if p['conflict']['pkg1']['package'] == name or p['conflict']['pkg2']['package'] == name :
+                                    direct = True
+                                    p1 = p['conflict']['pkg1']['package']
+                                    p2 = p['conflict']['pkg2']['package']
+                                    v1 = p['conflict']['pkg1']['version']
+                                    v2 = p['conflict']['pkg2']['version']
+                                    conflicts.append(((p1,v1),(p2,v2)))
+                                    print name," Directly broken conflict"
+                    s = {switch:(package['status'],direct,r)}
                     if ver in aggregatereport[name] :
-                        aggregatereport[name][ver][switch] = (package['status'],r)
+                        aggregatereport[name][ver][switch] = (package['status'],direct,r)
                     else :
                         aggregatereport[name][ver] = s
 

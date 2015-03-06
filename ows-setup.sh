@@ -44,7 +44,7 @@ function distcheck {
     echo "ocaml-switch: ${version}" > ${REPORTDIR}/${date}/report-${version}.yaml
     echo "date: ${date}" >> ${REPORTDIR}/${date}/report-${version}.yaml
     echo "commit: ${commit}" >> ${REPORTDIR}/${date}/report-${version}.yaml
-    ${DISTCHECK} pef://${TMPDIR}/report-${version}.pef --summary -s -f -e >> ${REPORTDIR}/${date}/report-${version}.yaml
+    ${DISTCHECK} pef://${TMPDIR}/report-${version}.pef --summary -e -s -f >> ${REPORTDIR}/${date}/report-${version}.yaml
     mv ${TMPDIR}/report-${version}.pef ${REPORTDIR}/${date}/
 #    gzip ${REPORTDIR}/${date}/report-${version}.yaml
 #    gzip ${REPORTDIR}/${date}/report-${version}.pef
