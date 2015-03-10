@@ -4,9 +4,9 @@
     <title>Opam Weather Service</title>
 	<meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/css/bootstrap.min.css" rel="stylesheet" media="screen">
-	<link rel="stylesheet" href="/css/bootstrap.vertical-tabs.min.css">
-	<link rel="stylesheet" type="text/css" href="/css/jquery.dataTables.css">
+    <link rel="stylesheet" href="../css/bootstrap.min.css" rel="stylesheet" media="screen">
+	<link rel="stylesheet" href="../css/bootstrap.vertical-tabs.min.css">
+	<link rel="stylesheet" href="../css/jquery.dataTables.css">
 	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
   </head>
   <body>
@@ -54,7 +54,10 @@
 					  <li>Partially Broken Packages: {{ summary['partial'] }}</li>
 					  <li>Correct Packages: {{ summary['correct'] }}</li>
 					</ol>
-					<p><a class="btn btn-social-icon btn-sm btn-github" href="https://github.com/ocaml/opam-repository/tree/{{summary['commit']}}"><i class="fa fa-github"></i> View Commit Tree</a></p>
+					<p><a class="btn btn-social-icon btn-sm btn-github"
+					      href="https://github.com/ocaml/opam-repository/tree/{{summary['commit']}}">
+						<i class="fa fa-github"></i> View Commit Tree</a>
+					</p>
 				  </div>
 				</div>
 			  </div>
@@ -130,26 +133,25 @@
 	  </div>
 	</div>
 
-	<script src="/js/jquery.min.js"></script>
-	<script src="/js/bootstrap.min.js"></script>
-	<script type="text/javascript" charset="utf8" src="/js/jquery.dataTables.js"></script>
+	<script src="../js/jquery.min.js"></script>
+	<script src="../js/bootstrap.min.js"></script>
+	<script src="../js/jquery.dataTables.js"></script>
 	<script type="text/javascript">
     // populate the modal with the content of the href
     $('#myModal').on('loaded.bs.modal', function (e) {
         $(this).find('#modal-table').DataTable({
 		  "bInfo" : false,
 		  "retrieve": true,
-		  "scrollY": "200px",
+		  "scrollY": "250px",
           "scrollCollapse": true,
 		  "bFilter": false,
           "paging":         false,
           "columnDefs": [
 			{ "orderable": false, "targets": [{{ range(1,(switches|count) + 1)|join(", ") }}] }
           ],
-		  "order": [[ 0, "desc" ]],
+		  "order": [[ 1, "desc" ]],
         });
 		var m = $(this);
-		console.log($(this).find("#modal-tab a"));
 		$(this).find("#modal-tab a").click(function(e){
 		  var href = $(this).attr("href");
 		  $(m).find(".collapse.in").collapse('hide');
@@ -157,15 +159,28 @@
 		  $(m).find(href).tab().show();
 		});
 		$(this).find('.reasons').click(function(e){
-		    //e.preventDefault();
 			var href = $(this).attr("href");
-			console.log($(m).find("#modal-tab a[href='#details']"));
-			console.log($(m).find("#modal-tab a[href='#overview']"));
 			$(m).find('#overview').tab().hide();
-			//$(m).find('#details').tab().show();
 			$(m).find("#modal-tab a[href='#details']").tab('show');
 			$(m).find(".collapse.in").collapse('hide');
 			$(m).find(href).collapse('toggle');
+			$(m).find('.package-backlink').click(function(e){
+			  var href = $(this).attr("data-remote");
+			  //console.log(href);
+			  //$(m).modal('hide');
+			  //console.log($(document).find('#package-table a[data-toggle="modal"]'));
+			  //console.log($(document).find('#package-table a[data-remote="'+href+'"]'));
+			  //console.log($(document).find('#package-table > a[data-remote="'+href+'"]'));
+			  $(document).find('a [data-remote="'+href+'"]').modal();
+			});
+			$(m).find('.version-backlink').click(function(e){
+			  var href = $(this).attr("data-remote");
+			  //console.log(href);
+			  //console.log($(document).find('a [data-remote="'+href+'"]'));
+			  //$(m).modal('hide');
+			  //$(document).find('a [data-remote="'+href+'"]').modal();
+			});
+
 		});
     });
 

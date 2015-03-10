@@ -62,18 +62,49 @@
 		  {% if result[s] is defined %}
 			{% if result[s][0] == 'broken' %}
 			  <div id="p{{version|replace(".","_")}}_{{s|replace(".","_")}}" class="collapse">
-				{% set direct = result[s][1] %}
-				{% set reasons = result[s][2] %}
+				{% set (direct,indirect) = result[s][1] %}
+				{% set dc = result[s][2] %}
+				{% set dm = result[s][3] %}
+				{% set idc = result[s][4] %}
+				{% set idm = result[s][5] %}
+				{% set reasons = result[s][4] %}
 				{% if direct %}
-				  <p>This package requires manual intervention because {{ reasons }}</p>
-				{% else %}
-				  <p>This package cannot be use with OCaml {{s}} because the package xxx 
-					(that is a dependency of {{ name }}) is broken.
-					 <p>Possible remedies are :</p>
+				<p>This package requires manual intervention because
+				   {% if dm|length > 0 %} some dependencies cannot be satisifed{% endif %}
+				   {% if dm|length > 0 and dc|length > 0 %} and {% endif %}
+				   {% if dc|length > 0 %} it is in conflict with other packages. {% endif %}
+				   {% if dm|length > 0 %}
+				   <p><ul>
+					 {% for dep in dm %}
+					   <li>This dependency {{ dep }} cannot be satisfied</li>
+					 {% endfor %}
+				   </ul></p>
+				   {% endif %}
+				   {% if dc|length > 0 %} it is in conflict with other packages :
+				   <p><ul>
+					 {% for ((p1,v2),(p2,v2)) in dc %}
+					   <li>These packages are in conflict ({{ p1 }} (= {{v1}}) ({{ p1 }} (= {{ v2 }}) </li>
+					 {% endfor %}
+				   </ul></p>
+				   {% endif %}
+				</p>
+				{% endif %}
+				{% if indirect %}
+				<p>This package cannot be use with OCaml {{s}} because package(s)
+				   {% for pkg,verlist in idm.iteritems() %}
+				   <a data-remote="packages/{{pkg}}.html" class="package-backlink">{{ pkg }}</a> (versions :
+					  {% for v in verlist %}
+						<a data-remote="#p{{v|replace(".","_")}}_{{s|replace(".","_")}}" class="version-backlink">{{ v }}</a>
+						{% if not loop.last %},{% endif %}
+					  {% endfor %}
+					)
+				   {% endfor %}
+					,that is/are an indirect dependency of {{ name }}, is/are broken.
+					 <p>Possible solutions are :</p>
 					 <ol>
-					   <li>Contact the maintainer of the package xxx or propose a patch</li>
-					   <li>Change/Amend the dependencies of this package</li>
-					   <li>Declare this package not available for OCaml {{ s }}</li>
+					   <li>Contact the maintainer of the package(s) {{ idm.keys()|join(', ') }} or propose a patch.</li>
+					   <li>Change/Amend the dependencies of this package.</li>
+					   <li>Declare this package not available for OCaml {{ s }}.</li>
 					 </ol>
 				  </p>
 				{% endif %}

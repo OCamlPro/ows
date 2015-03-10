@@ -81,28 +81,40 @@ def aggregate(d):
                     ver = package['version']
                     r = package['reasons'] if package['status'] == "broken" else ""
                     direct = False
-                    conflicts,missings = [],[]
+                    indirect = False
+                    dc,dm = [],[]
+                    idc,idm = {}, {}
                     if 'reasons' in package :
                         for p in package['reasons'] :
                             if 'missing' in p :
-                                if p['missing']['pkg']['package'] == name :
+                                pkgname = p['missing']['pkg']['package']
+                                pkgvers = p['missing']['pkg']['version']
+                                unsatdep = p['missing']['pkg']['unsat-dependency']
+                                if pkgname == name :
                                     direct = True
-                                    unsatdep = p['missing']['pkg']['unsat-dependency']
-                                    missings.append(unsatdep)
-                                    print name," Directly broken missing"
+                                    dm.append(unsatdep)
+                                else :
+                                    indirect = True
+                                    if pkgname not in idm :
+                                        idm[pkgname] = [pkgvers]
+                                    else :
+                                        idm[pkgname].append(pkgvers)
+
                             if 'conflict' in p :
                                 if p['conflict']['pkg1']['package'] == name or p['conflict']['pkg2']['package'] == name :
                                     direct = True
-                                    p1 = p['conflict']['pkg1']['package']
-                                    p2 = p['conflict']['pkg2']['package']
-                                    v1 = p['conflict']['pkg1']['version']
-                                    v2 = p['conflict']['pkg2']['version']
-                                    conflicts.append(((p1,v1),(p2,v2)))
-                                    print name," Directly broken conflict"
-                    s = {switch:(package['status'],direct,r)}
+                                else :
+                                    indirect = True
+                                p1 = p['conflict']['pkg1']['package']
+                                p2 = p['conflict']['pkg2']['package']
+                                v1 = p['conflict']['pkg1']['version']
+                                v2 = p['conflict']['pkg2']['version']
+                                dc.append(((p1,v1),(p2,v2)))
+
                     if ver in aggregatereport[name] :
-                        aggregatereport[name][ver][switch] = (package['status'],direct,r)
+                        aggregatereport[name][ver][switch] = (package['status'],(direct,indirect),dc,dm,idc,idm,r)
                     else :
+                        s = {switch:(package['status'],(direct,indirect),dc,dm,idc,idm,r)}
                         aggregatereport[name][ver] = s
 
     summaryreport = {}
@@ -116,13 +128,19 @@ def aggregate(d):
 
     switchnumber = len(d)
     for name,switches in summary.iteritems() :
-        ok,bad = [], []
+        ok,bad,partial = [], [], []
+        print switches.values()
         for x in switches.values() :
-            ok.append(x) if x == "ok" else bad.append(x)
-        if len(ok) == switchnumber or len(bad) == 0 :
+            if x == "ok" :
+                ok.append(x) 
+            elif x == "bad" :
+                bad.append(x)
+            else :
+                partial.append(x)
+        if len(ok) == switchnumber and len(bad) == 0 and len(partial) == 0 :
             summaryreport['correct'] += 1
             summaryreport['report'][name]['status'] = "ok"
-        elif len(bad) == switchnumber :
+        elif len(ok) == 0 and len(bad) == switchnumber and len(partial) == 0 :
             summaryreport['broken'] += 1
             summaryreport['report'][name]['status'] = "broken"
         else :
@@ -171,7 +189,9 @@ def main():
 
     reportdir = args.reportdir[0]
     picklefile = os.path.join(reportdir,'data.pickle')
+
     if os.path.exists(picklefile) :
+        print "Skip parsing ", picklefile
         (switches,ar,sr) = pickle.load(open(picklefile,'r'))
     else :
         report = []
@@ -187,15 +207,42 @@ def main():
                     report.append(r)
                 dataset.close()
 
-        print "Aggregate"
+        print "Aggregate ", picklefile
         (ar,sr) = aggregate(report)
-        pickle.dump((switches,ar,sr),open(picklefile,'wb'))
+        f = open(picklefile,'wb')
+        pickle.dump((switches,ar,sr),f)
+        f.close()
 
     print "Packages"
     html_package(ar,switches,sr['date'])
     print "Summary"
     html_summary(ar,sr,switches)
     print "Done"
+
+    historydir = os.path.dirname(reportdir)
+    picklehist = os.path.join(historydir,'history.pickle')
+
+    print "Save History ", picklehist
+    h = {}
+    del sr['report']
+    newdata = { 'switches' : switches , 'summary' : sr }
+    newcommit = sr['commit'] 
+    if os.path.exists(picklehist) :
+        f = open(picklehist,'r')
+        h = pickle.load(f)
+        f.close()
+        if not newcommit in h :
+            h[newcommit] = newdata
+            f = open(picklehist,'wb')
+            pickle.dump(h,f)
+            f.close()
+    else :
+        print "new hist", newcommit
+        f = open(picklehist,'wb')
+        h[newcommit] = newdata
+        pickle.dump(h,f)
+        f.close()
+    print h
 
 if __name__ == '__main__':
     main()
