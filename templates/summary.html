@@ -1,205 +1,48 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>Opam Weather Service</title>
-	<meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../css/bootstrap.min.css" rel="stylesheet" media="screen">
-	<link rel="stylesheet" href="../css/bootstrap.vertical-tabs.min.css">
-	<link rel="stylesheet" href="../css/jquery.dataTables.css">
-	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
-  </head>
-  <body>
+{% extends "templates/page.html" %}
+{% block title %}{% endblock %}
+{% block intro %}
+  This table provides a list of packages that are cause other packages
+  to be not installable. For each tuple, package, version, and for each
+  repository we give the aggregate number of packages that are broken.
+{% endblock %}
 
-	  <nav class="navbar navbar-default" role="banner">
-		<div class="container">
-		  <div class="navbar-header">
-			<button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".navbar-collapse">
-			  <span class="sr-only">Toggle navigation</span>
-			  <span class="icon-bar"></span>
-			  <span class="icon-bar"></span>
-			  <span class="icon-bar"></span>
-			</button>
-			<a href="/" class="navbar-brand">OWS</a>
-		  </div>
-		  <nav class="collapse navbar-collapse" role="navigation">
-			<ul class="nav navbar-nav">
-			  <li><a href="#">Backlog</a></li>
-			  <li><a href="#">About</a></li>
-			</ul>
-		  </nav>
-		</div>
-	  </nav>
+{% block content %}
+<div class="container">
+  <table id="summary-table" class="table table-hover table-condensed">
+	<thead>
+    <tr><th>Package</th><th>total</th>{% for s in switches %}<th>{{s}}</th>{% endfor %}</tr>
+	</thead>
+	<tbody>
+  {% for (n,v),breaks in summary['summary']['missing'].iteritems() %}
+    <tr>
+      <td><a data-toggle="modal" data-target="#myModal" data-remote="summary/{{n}}{{v}}.html">{{n}} {{v}}</a></td>
+      <td>{{ breaks['total'] }}</td>
+    {% for s in switches %}
+      {% if breaks[s] is defined %}
+        <td>{{ breaks[s]['breaks'] }}</td>
+      {% else %}
+        <td>...</td>
+      {% endif %}
+    {% endfor %}
+    </tr>
+  {% endfor %}
+  {% for (pkg1,pkg2),breaks in summary['summary']['conflict'].iteritems() %}
+    <tr>
+      {% set n1,v1 = pkg1[0],pkg1[1] %}
+      {% set n2,v2 = pkg2[0],pkg2[1] %}
+      <td><a data-toggle="modal" data-target="#myModal" data-remote="summary/{{n1}}{{v1}}-{{n2}}{{v2}}.html">({{n1}} {{v1}}) # ({{n2}} {{v2}})</a></td>
+      <td>{{ breaks['total'] }}</td>
+    {% for s in switches %}
+      {% if breaks[s] is defined %}
+        <td>{{ breaks[s]['breaks'] }}</td>
+      {% else %}
+        <td>...</td>
+      {% endif %}
+    {% endfor %}
+    </tr>
+  {% endfor %}
 
-	  <div class="container">
-		  <div class="row">
-			<div class="col-md-7">
-			  <h1>OCaml Weather Service
-				<p class="lead">Powered by opam/dose</p>
-			  </h1>
-			<p>
-			  This service runs reguat regular intervals an evaluation of the solvability of
-			  dependencies in the official OPAM repository, for 4 stable releases of
-			  OCaml.
-			</p>
-		  </div>
-		  <div class="col-md-5">
-			  <div class="well well-lg"> 
-				<div class="row">
-				  <div class="col-sm-12">
-					<h4>Status of the Repository ({{summary['date']}})</h4>
-					<ol>
-					  <li>Package Names: {{ summary['totalnames'] }}</li>
-					  <li>Broken Packages: {{ summary['broken'] }}</li>
-					  <li>Partially Broken Packages: {{ summary['partial'] }}</li>
-					  <li>Correct Packages: {{ summary['correct'] }}</li>
-					</ol>
-					<p><a class="btn btn-social-icon btn-sm btn-github"
-					      href="https://github.com/ocaml/opam-repository/tree/{{summary['commit']}}">
-						<i class="fa fa-github"></i> View Commit Tree</a>
-					</p>
-				  </div>
-				</div>
-			  </div>
-		  </div>
-		</div> 
-	</div><!--/container-->
-
-    <div class="container">
-      <table id="package-table" class="table table-hover table-condensed" >
-		<thead>
-		  <tr><th>Name</th><th>status</th>{% for s in switches %}<th>{{s}}</th>{% endfor %}</tr>
-		</thead>
-		<tbody>
-		{% for name,versions in summary['report'].iteritems() %}
-		  <tr>
-			<td><a data-toggle="modal" data-target="#myModal" data-remote="packages/{{name}}.html">{{name}}</a></td>
-			<td>
-			  	{% if summary['report'][name]['status'] == 'broken' %}
-				<span style="color:red"
-				      data-toggle="tooltip"
-					  title="This package is not usable with any compiler">
-					<span class="glyphicon glyphicon glyphicon-thumbs-down"></span>
-				  </span>
-				{% elif summary['report'][name]['status'] == 'partial' %}
-				  <span style="color:red"
-					    data-toggle="tooltip"
-						title="Some versions of this package are not installable">
-					<span class="glyphicon glyphicon-warning-sign"></span>
-				  </span>
-				{% elif summary['report'][name]['status'] == 'ok' %}
-				  <span style="color:green">
-					<span class="glyphicon glyphicon-thumbs-up"></span>
-				  </span>
-				{% endif %}
-			</td>
-			{% for s in switches %}
-			  <td>
-			  {% if summary['report'][name][s] is defined %}
-				{% if summary['report'][name][s] == 'broken' %}
-				  <span style="color:red"
-					    data-toggle="tooltip"
-						title="This package cannot be used with OCaml {{s}}">
-					<span class="glyphicon glyphicon-fire"></span>
-					<span class="glyphicon glyphicon-fire"></span>
-				  </span>
-				{% elif summary['report'][name][s] == 'partial' %}
-				  <span style="color:red"
-					    data-toggle="tooltip"
-					    title="Some versions of this package cannot be used with OCaml {{s}}">
-					<span class="glyphicon glyphicon-fire"></span>
-				  </span>
-				{% elif summary['report'][name][s] == 'ok' %}
-				  <span style="color:green">
-					<span class="glyphicon glyphicon-ok"></span>
-				  </span>
-				{% endif %}
-			  {% else %}
-				  <span class="glyphicon glyphicon-option-horizontal"
-					    data-toggle="tooltip"
-					    title="This package is not available for OCaml {{s}}"></span>
-			  {% endif %}
-			  </td>
-			{% endfor %}
-		  </tr>
-	    {% endfor %}
-		</tbody>
-      </table>
-    </div>
-
-	<div id="myModal" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
-	  <div class="modal-dialog modal-lg" style="height:80vh">
-		<div class="modal-content"></div>
-	  </div>
-	</div>
-
-	<script src="../js/jquery.min.js"></script>
-	<script src="../js/bootstrap.min.js"></script>
-	<script src="../js/jquery.dataTables.js"></script>
-	<script type="text/javascript">
-    // populate the modal with the content of the href
-    $('#myModal').on('loaded.bs.modal', function (e) {
-        $(this).find('#modal-table').DataTable({
-		  "bInfo" : false,
-		  "retrieve": true,
-		  "scrollY": "250px",
-          "scrollCollapse": true,
-		  "bFilter": false,
-          "paging":         false,
-          "columnDefs": [
-			{ "orderable": false, "targets": [{{ range(1,(switches|count) + 1)|join(", ") }}] }
-          ],
-		  "order": [[ 1, "desc" ]],
-        });
-		var m = $(this);
-		$(this).find("#modal-tab a").click(function(e){
-		  var href = $(this).attr("href");
-		  $(m).find(".collapse.in").collapse('hide');
-		  $(this).addClass('active');
-		  $(m).find(href).tab().show();
-		});
-		$(this).find('.reasons').click(function(e){
-			var href = $(this).attr("href");
-			$(m).find('#overview').tab().hide();
-			$(m).find("#modal-tab a[href='#details']").tab('show');
-			$(m).find(".collapse.in").collapse('hide');
-			$(m).find(href).collapse('toggle');
-			$(m).find('.package-backlink').click(function(e){
-			  var href = $(this).attr("data-remote");
-			  //console.log(href);
-			  //$(m).modal('hide');
-			  //console.log($(document).find('#package-table a[data-toggle="modal"]'));
-			  //console.log($(document).find('#package-table a[data-remote="'+href+'"]'));
-			  //console.log($(document).find('#package-table > a[data-remote="'+href+'"]'));
-			  $(document).find('a [data-remote="'+href+'"]').modal();
-			});
-			$(m).find('.version-backlink').click(function(e){
-			  var href = $(this).attr("data-remote");
-			  //console.log(href);
-			  //console.log($(document).find('a [data-remote="'+href+'"]'));
-			  //$(m).modal('hide');
-			  //$(document).find('a [data-remote="'+href+'"]').modal();
-			});
-
-		});
-    });
-
-    // destroy the modal object when closed
-	$('body').on('hidden.bs.modal', '.modal', function () {
-		$(this).removeData('bs.modal');
-	});
-
-	$(document).ready(function() {
-	    // init the dataTables object in the main page
-		$('#package-table').DataTable( {
-		  "columnDefs": [
-			{ "orderable": false, "targets": [{{ range(1,(switches|count) + 1)|join(", ") }}] }
-		  ]
-		} );
-	} );
-
-    </script>
-
-  </body>
-
-</html>
+	</tbody>
+  </table>
+</div>
+{% endblock %}

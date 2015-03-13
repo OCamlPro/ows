@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Opam Weather Service</title>
+	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/bootstrap.min.css" rel="stylesheet" media="screen">
+	<link rel="stylesheet" href="../css/bootstrap.vertical-tabs.min.css">
+	<link rel="stylesheet" href="../css/jquery.dataTables.css">
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+	<link rel="stylesheet" href="../css/weather-icons.min.css">
+  </head>
+  <body>
+
+	  <nav class="navbar navbar-default" role="banner">
+		<div class="container">
+		  <div class="navbar-header">
+			<button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".navbar-collapse">
+			  <span class="sr-only">Toggle navigation</span>
+			  <span class="icon-bar"></span>
+			  <span class="icon-bar"></span>
+			  <span class="icon-bar"></span>
+			</button>
+			<a href="/" class="navbar-brand">OWS</a>
+		  </div>
+		  <nav class="collapse navbar-collapse" role="navigation">
+			<ul class="nav navbar-nav">
+			  <li><a href="#">Backlog</a></li>
+			  <li><a href="#">About</a></li>
+			</ul>
+		  </nav>
+		</div>
+	  </nav>
+
+	  <div class="container">
+		  <div class="row">
+			<div class="col-md-7">
+			  <h1>OCaml Weather Service
+				<p class="lead">Powered by opam/dose</p>
+			  </h1>
+			  <h3>{% block title %}{% endblock %}</h3>
+			  <p>{% block intro %}{% endblock %}</p>
+		  </div>
+		  <div class="col-md-5">
+			  <div class="well well-lg"> 
+				<div class="row">
+				  <div class="col-sm-12">
+					<h4>Status of the Repository ({{summary['date']}})</h4>
+					<ol>
+					  <li>Package Names: {{ summary['totalnames'] }}</li>
+					  <li>Broken Packages: {{ summary['broken'] }}</li>
+					  <li>Partially Broken Packages: {{ summary['partial'] }}</li>
+					  <li>Correct Packages: {{ summary['correct'] }}</li>
+					</ol>
+					<p><a class="btn btn-social-icon btn-sm btn-github"
+					      href="https://github.com/ocaml/opam-repository/tree/{{summary['commit']}}">
+						<i class="fa fa-github"></i> View Commit Tree</a>
+					</p>
+				  </div>
+				</div>
+			  </div>
+		  </div>
+		</div> 
+	</div><!--/container-->
+
+    <div class="container">
+	  {% block content %}{% endblock %}
+    </div>
+
+	<div id="myModal" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+	  <div class="modal-dialog modal-lg" style="height:80vh">
+		<div class="modal-content"></div>
+	  </div>
+	</div>
+
+	<script src="../js/jquery.min.js"></script>
+	<script src="../js/bootstrap.min.js"></script>
+	<script src="../js/jquery.dataTables.js"></script>
+	<script type="text/javascript">
+    // populate the modal with the content of the href
+    $('#myModal').on('loaded.bs.modal', function (e) {
+        $(this).find('#modal-table').DataTable({
+		  "bInfo" : false,
+		  "retrieve": true,
+//		  "scrollY": "250px",
+//        "scrollCollapse": true,
+		  "bFilter": false,
+          "paging":         false,
+		  "ordering": false,
+//          "columnDefs": [
+//			{ "orderable": false, "targets": [{{ range(1,(switches|count) + 1)|join(", ") }}] }
+//          ],
+//		  "order": [[ 0, "desc" ]],
+        });
+		var m = $(this);
+		$(this).find("#modal-tab a").click(function(e){
+		  var href = $(this).attr("href");
+		  $(m).find(".collapse.in").collapse('hide');
+		  $(this).addClass('active');
+		  $(m).find(href).tab().show();
+		});
+		$(this).find('.reasons').click(function(e){
+			var href = $(this).attr("href");
+			$(m).find('#overview').tab().hide();
+			$(m).find("#modal-tab a[href='#details']").tab('show');
+			$(m).find(".collapse.in").collapse('hide');
+			$(m).find(href).collapse('toggle');
+			$(m).find('.package-backlink').click(function(e){
+			  var href = $(this).attr("data-remote");
+			  //console.log(href);
+			  //$(m).modal('hide');
+			  //console.log($(document).find('#package-table a[data-toggle="modal"]'));
+			  //console.log($(document).find('#package-table a[data-remote="'+href+'"]'));
+			  //console.log($(document).find('#package-table > a[data-remote="'+href+'"]'));
+			  $(document).find('a [data-remote="'+href+'"]').modal();
+			});
+			$(m).find('.version-backlink').click(function(e){
+			  var href = $(this).attr("data-remote");
+			  //console.log(href);
+			  //console.log($(document).find('a [data-remote="'+href+'"]'));
+			  //$(m).modal('hide');
+			  //$(document).find('a [data-remote="'+href+'"]').modal();
+			});
+
+		});
+    });
+
+    // destroy the modal object when closed
+	$('body').on('hidden.bs.modal', '.modal', function () {
+		$(this).removeData('bs.modal');
+	});
+
+	$(document).ready(function() {
+	    // init the dataTables object in the main page
+		$('#package-table').DataTable( {
+		  "ordering": false,
+		  //"columnDefs": [
+		//	{ "orderable": false, 
+		//	  "targets": [{{ range(1,(switches|count) + 2)|join(", ") }}] }
+		//  ],
+		  //"order": [[ 1, "desc" ]],
+		} );
+		$('#summary-table').DataTable( {
+		  "ordering": false,
+		  //"columnDefs": [
+		//	{ "orderable": false, 
+		//	  "targets": [{{ range(1,(switches|count) + 2)|join(", ") }}] }
+		//  ],
+		  //"order": [[ 1, "desc" ]],
+		} );
+	} );
+
+    </script>
+
+  </body>
+
+</html>

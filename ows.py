@@ -21,10 +21,11 @@ import datetime as dt
 import matplotlib.pyplot as plt
 from matplotlib import dates
 import os.path
-from itertools import groupby
+from itertools import groupby, izip_longest
 from operator import itemgetter, attrgetter, methodcaller
 import collections
 from collections import defaultdict
+from collections import OrderedDict
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -40,6 +41,7 @@ def parse(f):
         d['ocaml_switch'] = data['ocaml_switch']
         d['date'] = data['date']
         d['commit'] = data['commit']
+        d['summary'] = data['summary']
         d['report'] = {}
         for name, group in groupby(data['report'], lambda x: x['package']):
             for p in group:
@@ -48,11 +50,13 @@ def parse(f):
                     d['report'][name].append(p)
                 else :
                     d['report'][name] = [p]
+
     return d
 
 #    { pippo : [ { 1.1 : { 4.01 : ok, 4.02 : broken } }, { 1.2 : { 4.01 : ok, 4.02 : broken } }, ] }
 def aggregate(d):
     aggregatereport = {}
+    aggregatesummary = { 'conflict' : {} , 'missing' : {} }
     summary = {}
     date = None
     commit = None
@@ -61,6 +65,34 @@ def aggregate(d):
             date = report['date']
             commit = report['commit']
             switch = report['ocaml_switch']
+            for a in report['summary'] :
+                if 'missing' in a :
+                    breaks = int(a['missing']['breaks'])
+                    pkg = (a['missing']['pkg']['package'],a['missing']['pkg']['version'])
+                    s = { 'breaks' : breaks , 'packages' : a['missing']['packages'] }
+                    if pkg in aggregatesummary['missing']:
+                        aggregatesummary['missing'][pkg][switch] = s
+                    else :
+                        aggregatesummary['missing'][pkg] = { switch :  s }
+                    if 'total' in aggregatesummary['missing'][pkg] :
+                        aggregatesummary['missing'][pkg]['total'] += breaks
+                    else :
+                        aggregatesummary['missing'][pkg]['total'] = breaks
+
+                elif 'conflict' in a :
+                    pkg1 = (a['conflict']['pkg1']['package'],a['conflict']['pkg1']['version'])
+                    pkg2 = (a['conflict']['pkg2']['package'],a['conflict']['pkg2']['version'])
+                    breaks = int(a['conflict']['breaks'])
+                    s = { 'breaks' : breaks , 'packages' : a['conflict']['packages'] }
+                    if (pkg1,pkg2) in aggregatesummary['conflict'] :
+                        aggregatesummary['conflict'][(pkg1,pkg2)][switch] = s
+                    else :
+                        aggregatesummary['conflict'][(pkg1,pkg2)] = { switch : s }
+                    if 'total' in aggregatesummary['conflict'][(pkg1,pkg2)] :
+                        aggregatesummary['conflict'][(pkg1,pkg2)]['total'] += breaks
+                    else :
+                        aggregatesummary['conflict'][(pkg1,pkg2)]['total'] = breaks
+
             for name, l in report['report'].iteritems() :
                 if name not in aggregatereport :
                     aggregatereport[name] = {}
@@ -79,11 +111,11 @@ def aggregate(d):
 
                 for package in l :
                     ver = package['version']
-                    r = package['reasons'] if package['status'] == "broken" else ""
+                    r = package['reasons'] if package['status'] == "broken" else None
                     direct = False
                     indirect = False
-                    dc,dm = [],[]
-                    idc,idm = {}, {}
+                    dc,dm = [],[] # direct conflicts, direct missing
+                    idc,idm = [], {} # indirect conflicts, indirect missing
                     if 'reasons' in package :
                         for p in package['reasons'] :
                             if 'missing' in p :
@@ -101,21 +133,22 @@ def aggregate(d):
                                         idm[pkgname].append(pkgvers)
 
                             if 'conflict' in p :
-                                if p['conflict']['pkg1']['package'] == name or p['conflict']['pkg2']['package'] == name :
-                                    direct = True
-                                else :
-                                    indirect = True
                                 p1 = p['conflict']['pkg1']['package']
                                 p2 = p['conflict']['pkg2']['package']
                                 v1 = p['conflict']['pkg1']['version']
                                 v2 = p['conflict']['pkg2']['version']
-                                dc.append(((p1,v1),(p2,v2)))
+                                if p['conflict']['pkg1']['package'] == name or p['conflict']['pkg2']['package'] == name :
+                                    direct = True
+                                    dc.append(((p1,v1),(p2,v2)))
+                                else :
+                                    indirect = True
+                                    idc.append(((p1,v1),(p2,v2)))
 
+                    p = (package['status'],(direct,indirect),dc,dm,idc,idm,r)
                     if ver in aggregatereport[name] :
-                        aggregatereport[name][ver][switch] = (package['status'],(direct,indirect),dc,dm,idc,idm,r)
+                        aggregatereport[name][ver][switch] = p
                     else :
-                        s = {switch:(package['status'],(direct,indirect),dc,dm,idc,idm,r)}
-                        aggregatereport[name][ver] = s
+                        aggregatereport[name][ver] = { switch : p }
 
     summaryreport = {}
     summaryreport['totalnames'] = len(aggregatereport)
@@ -125,53 +158,107 @@ def aggregate(d):
     summaryreport['report'] = summary
     summaryreport['date'] = date
     summaryreport['commit'] = commit
+    summaryreport['summary'] = aggregatesummary
 
     switchnumber = len(d)
     for name,switches in summary.iteritems() :
-        ok,bad,partial = [], [], []
-        print switches.values()
-        for x in switches.values() :
-            if x == "ok" :
-                ok.append(x) 
-            elif x == "bad" :
-                bad.append(x)
-            else :
-                partial.append(x)
-        if len(ok) == switchnumber and len(bad) == 0 and len(partial) == 0 :
-            summaryreport['correct'] += 1
-            summaryreport['report'][name]['status'] = "ok"
-        elif len(ok) == 0 and len(bad) == switchnumber and len(partial) == 0 :
+        broken,correct,undefined,total_versions = 0,0,0,0
+        for version, results in aggregatereport[name].iteritems() :
+            for s in switches :
+                total_versions += 1
+                if s in results :
+                    if results[s][0] == "broken" :
+                        broken += 1
+                    else :
+                        correct += 1
+                else :
+                    undefined += 1
+        summaryreport['report'][name]['percent'] = int(100.0 * (float(broken) / float(total_versions)))
+        if broken == total_versions - undefined :
             summaryreport['broken'] += 1
             summaryreport['report'][name]['status'] = "broken"
+        elif correct == total_versions - undefined :
+            summaryreport['correct'] += 1
+            summaryreport['report'][name]['status'] = "ok"
         else :
             summaryreport['partial'] += 1
             summaryreport['report'][name]['status'] = "partial"
 
+    summaryreport['report'] = OrderedDict(sorted(summaryreport['report'].items(), key=lambda x : x[1]['percent'],reverse=True))
+    summaryreport['summary']['missing'] = OrderedDict(sorted(summaryreport['summary']['missing'].items(), key=lambda x: x[1]['total'],reverse=True))
+    summaryreport['summary']['conflict'] = OrderedDict(sorted(summaryreport['summary']['conflict'].items(), key=lambda x: x[1]['total'],reverse=True))
+
     return aggregatereport,summaryreport
 
-# total number of package names on all Switch
-# total number of packages for each Switch
-
-# a package is Broken if it is broken for All (declared) Switch
-# a package is Partially Broken if it is broken on Some (declared) Switch
-# a package is Correct if it is installable on All (declared) Switch
-
-def html_package(aggregatereport,switches,date):
+def html_weather(aggregatereport,summaryreport,switches):
     j2_env = Environment(loader=FileSystemLoader(THIS_DIR),trim_blocks=True)
     for name,versions in aggregatereport.iteritems() :
         template = j2_env.get_template('templates/package.html')
-        output = template.render({'name' : name, 'versions' : versions, 'switches': switches, 'date' : date})
-        dirname = os.path.join("html",str(date),'packages')
+        output = template.render({'name' : name, 'versions' : versions, 'switches': switches, 'date' : summaryreport['date']})
+        dirname = os.path.join("html",str(summaryreport['date']),'packages')
         if not os.path.exists(dirname) :
             os.makedirs(dirname)
         fname = os.path.join(dirname,name+".html")
+        #print "Saving ",fname
         with open(fname, 'w') as f:
             f.write(output)
-
-def html_summary(aggregatereport,summaryreport,switches):
-    j2_env = Environment(loader=FileSystemLoader(THIS_DIR),trim_blocks=True)
-    template = j2_env.get_template('templates/summary.html')
+    template = j2_env.get_template('templates/weather.html')
     output = template.render({'report' : aggregatereport, 'summary' : summaryreport, 'switches': switches})
+    dirname = os.path.join("html",str(summaryreport['date']))
+    if not os.path.exists(dirname) :
+        os.makedirs(dirname)
+    fname = os.path.join(dirname,"weather.html")
+    with open(fname, 'w') as f:
+        f.write(output)
+ 
+def html_summary(summaryreport,switches):
+    j2_env = Environment(loader=FileSystemLoader(THIS_DIR),trim_blocks=True)
+    for t,s in summaryreport['summary'].iteritems() :
+        if t == 'missing' :
+            for (name,version),a in s.iteritems() :
+                rows = []
+                for sw,b in a.iteritems() :
+                    l = []
+                    if sw != 'total' :
+                        for n,group in groupby(b['packages'], lambda p: p['package']) :
+                            ll = map(lambda p: p['version'],list(group))
+                            l.append((n,ll))
+                        rows.append([sw] + l)
+                rows = map(lambda x: list(x),izip_longest(*(sorted(rows,key=lambda x : x[0]))))
+                template = j2_env.get_template('templates/packagelist.html')
+                title = "%s %s (ows : %s)" % (name,version,summaryreport['date'])
+                output = template.render({'title' : title, 'summary' : rows, 'switches': switches})
+                dirname = os.path.join("html",str(summaryreport['date']),'summary')
+                if not os.path.exists(dirname) :
+                    os.makedirs(dirname)
+                fname = os.path.join(dirname,name+version+".html")
+                #print "Saving ",fname
+                with open(fname, 'w') as f:
+                    f.write(output)
+        if t == 'conflict' :
+            for (pkg1,pkg2),a in s.iteritems() :
+                rows = []
+                for sw,b in a.iteritems() :
+                    l = []
+                    if sw != 'total' :
+                        for n,group in groupby(b['packages'], lambda p: p['package']) :
+                            ll = map(lambda p: p['version'],list(group))
+                            l.append((n,ll))
+                        rows.append([sw] + l)
+                rows = map(lambda x: list(x),izip_longest(*(sorted(rows,key=lambda x : x[0]))))
+                template = j2_env.get_template('templates/packagelist.html')
+                title = "%s %s # %s %s (ows : %s)" % (pkg1[0],pkg1[1],pkg2[0],pkg2[1],summaryreport['date'])
+                output = template.render({'title': title, 'summary' : rows, 'switches': switches})
+                dirname = os.path.join("html",str(summaryreport['date']),'summary')
+                if not os.path.exists(dirname) :
+                    os.makedirs(dirname)
+                fname = os.path.join(dirname,pkg1[0]+pkg1[1]+"-"+pkg2[0]+pkg2[1]+".html")
+                #print "Saving ",fname
+                with open(fname, 'w') as f:
+                    f.write(output)
+
+    template = j2_env.get_template('templates/summary.html')
+    output = template.render({'summary' : summaryreport, 'switches': switches})
     dirname = os.path.join("html",str(summaryreport['date']))
     if not os.path.exists(dirname) :
         os.makedirs(dirname)
@@ -183,12 +270,16 @@ def main():
     parser = argparse.ArgumentParser(description='create ows static pages')
     parser.add_argument('-v', '--verbose')
     parser.add_argument('-d', '--debug', action='store_true', default=False)
+    parser.add_argument('--nocache', action='store_true', default=False)
     parser.add_argument('--releases', type=str, nargs=1, help="release timeline")
     parser.add_argument('reportdir', type=str, nargs=1, help="dataset")
     args = parser.parse_args()
 
     reportdir = args.reportdir[0]
     picklefile = os.path.join(reportdir,'data.pickle')
+
+    if args.nocache and os.path.exists(picklefile) :
+        os.remove(picklefile)
 
     if os.path.exists(picklefile) :
         print "Skip parsing ", picklefile
@@ -213,10 +304,10 @@ def main():
         pickle.dump((switches,ar,sr),f)
         f.close()
 
-    print "Packages"
-    html_package(ar,switches,sr['date'])
+    print "Weather"
+    html_weather(ar,sr,switches)
     print "Summary"
-    html_summary(ar,sr,switches)
+    html_summary(sr,switches)
     print "Done"
 
     historydir = os.path.dirname(reportdir)
@@ -242,7 +333,6 @@ def main():
         h[newcommit] = newdata
         pickle.dump(h,f)
         f.close()
-    print h
 
 if __name__ == '__main__':
     main()

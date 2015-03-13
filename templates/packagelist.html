@@ -1,0 +1,29 @@
+<div class="modal-header">
+  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+  <h4 class="modal-title" id="myModalLabel">{{title}}</h4>
+</div>
+
+<div class="modal-body">
+  <table id="modal-table" class="display" cellspacing="0" width="100%">
+	<thead>
+	  <tr>{% for e in summary[0] %}<th>{{ e }}</th>{% endfor %}</tr>
+	</thead>
+	<tbody>
+	  {% for r in summary[1:] %}
+	  <tr>
+		{% for v in r %}
+		  {% if v is defined %}
+		  <td><a data-toggle="tooltip" title="{% for vv in v[1] %} {{ vv }} {% endfor %}">{{ v[0] }}</a></td>
+		  {% else %}
+			<td></td>
+		  {% endif %}
+		{% endfor %}
+	  </tr>
+	  {% endfor %}
+	</tbody>
+  </table>
+</div>
+
+<div class="modal-footer">
+  <!--button type="button" class="btn btn-default" data-dismiss="modal">Close</button-->
+</div>
