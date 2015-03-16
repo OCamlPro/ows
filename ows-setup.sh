@@ -38,14 +38,14 @@ function distcheck {
   local commit=$2
 
   for version in ${VERSIONS}; do
-  #echo "mkdir ${REPORTDIR}/${date}"
-    mkdir -p ${REPORTDIR}/${date}
+    dirname=${REPORTDIR}/$(date --date "$date" +%Y-"%m-%d")/${commit}/
+    mkdir -p ${dirname}
     ${OPAM} config cudf-universe --switch ${version} > ${TMPDIR}/report-${version}.pef
-    echo "ocaml-switch: ${version}" > ${REPORTDIR}/${date}/report-${version}.yaml
-    echo "date: ${date}" >> ${REPORTDIR}/${date}/report-${version}.yaml
-    echo "commit: ${commit}" >> ${REPORTDIR}/${date}/report-${version}.yaml
-    ${DISTCHECK} pef://${TMPDIR}/report-${version}.pef -m --summary -e -s -f >> ${REPORTDIR}/${date}/report-${version}.yaml
-    mv ${TMPDIR}/report-${version}.pef ${REPORTDIR}/${date}/
+    echo "ocaml-switch: ${version}" > ${dirname}/report-${version}.yaml
+    echo "date: ${date}" >> ${dirname}/report-${version}.yaml
+    echo "commit: ${commit}" >> ${dirname}/report-${version}.yaml
+    ${DISTCHECK} pef://${TMPDIR}/report-${version}.pef -m --summary -e -s -f >> ${dirname}/report-${version}.yaml
+    mv ${TMPDIR}/report-${version}.pef ${dirname}/
 #    gzip ${REPORTDIR}/${date}/report-${version}.yaml
 #    gzip ${REPORTDIR}/${date}/report-${version}.pef
   done
@@ -54,18 +54,17 @@ function distcheck {
 
 ######################################################################
 
+  set -x
 function rewind_git {
   cd ${OPAMREPO}
-  local commit=""
+  local commits=""
+  local oneday=$(date --date "$1 +1 day")
   if [ ! -z "$1" ]; then
-    commit=$(git rev-list -n 1 --before="$1" origin/master)
+    commits=$(git rev-list --since="$1" --until="$oneday" origin/master)
   else
-    commit=$(git rev-list -n 1 origin/master)
+    commits=$(git rev-list -n 1 origin/master)
   fi
-  git reset ${commit} --hard > /dev/null
-  git clean -dxf > /dev/null
-  ${OPAM} update --use-internal-solver > /dev/null
-  echo "${commit}"
+  echo "${commits}"
 }
 
 function replay {
@@ -83,8 +82,17 @@ function replay {
   for date in $range; do
 
       echo "replay $date"
-      local commit=$(rewind_git "$date-12-00-00")
-      distcheck $date $commit
+      local commits=$(rewind_git "$date")
+
+      for commit in ${commits}; do
+        cd ${OPAMREPO}
+        local date=$(git show -s --format=%ci ${commit})
+        git reset ${commit} --hard > /dev/null
+        git clean -dxf > /dev/null
+        ${OPAM} update --use-internal-solver > /dev/null
+        cd -
+        distcheck "$date" "$commit"
+      done
 
   done
 }

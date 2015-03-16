@@ -203,7 +203,7 @@ def html_weather(aggregatereport,summaryreport,switches):
         with open(fname, 'w') as f:
             f.write(output)
     template = j2_env.get_template('templates/weather.html')
-    output = template.render({'report' : aggregatereport, 'summary' : summaryreport, 'switches': switches})
+    output = template.render({'summary' : summaryreport, 'switches': switches})
     dirname = os.path.join("html",str(summaryreport['date']))
     if not os.path.exists(dirname) :
         os.makedirs(dirname)
@@ -271,7 +271,6 @@ def main():
     parser.add_argument('-v', '--verbose')
     parser.add_argument('-d', '--debug', action='store_true', default=False)
     parser.add_argument('--nocache', action='store_true', default=False)
-    parser.add_argument('--releases', type=str, nargs=1, help="release timeline")
     parser.add_argument('reportdir', type=str, nargs=1, help="dataset")
     args = parser.parse_args()
 
@@ -310,28 +309,28 @@ def main():
     html_summary(sr,switches)
     print "Done"
 
-    historydir = os.path.dirname(reportdir)
+    historydir = "reports"
     picklehist = os.path.join(historydir,'history.pickle')
 
-    print "Save History ", picklehist
+    print "Save History "
     h = {}
     del sr['report']
-    newdata = { 'switches' : switches , 'summary' : sr }
-    newcommit = sr['commit'] 
+    newsummary = { 'switches' : switches , 'summary' : sr }
+    newdate = sr['date'] 
     if os.path.exists(picklehist) :
         f = open(picklehist,'r')
         h = pickle.load(f)
         f.close()
-        if not newcommit in h :
-            h[newcommit] = newdata
+        if not newdate in h :
+            h[newdate] = newsummary
             f = open(picklehist,'wb')
-            pickle.dump(h,f)
+            pickle.dump(OrderedDict(sorted(h.iteritems(),key=lambda r: r[1])),f)
             f.close()
     else :
-        print "new hist", newcommit
+        print "new hist", newdate, sr['commit']
         f = open(picklehist,'wb')
-        h[newcommit] = newdata
-        pickle.dump(h,f)
+        h[newdate] = newsummary
+        pickle.dump(OrderedDict(sorted(h.iteritems(),key=lambda r: r[1])),f)
         f.close()
 
 if __name__ == '__main__':
