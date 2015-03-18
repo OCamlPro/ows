@@ -19,7 +19,12 @@ OCaml.
 	<tbody>
 	{% for name,versions in summary['report'].iteritems() %}
 	  <tr>
-		<td><a id="#package{{name}}" data-toggle="modal" data-target="#myModal" data-remote="packages/{{name}}.html">{{name}}</a></td>
+		<td>
+      <a id="#package{{name}}" data-toggle="modal" data-target="#myModal" data-remote="packages/{{name}}.html">{{name}}</a>
+      {% for w in summary['weather'][name] %}
+      {{ w }}
+      {% endfor %}
+    </td>
 		<td>
 			{% if summary['report'][name]['status'] == 'broken' %}
 			<span style="color:red"

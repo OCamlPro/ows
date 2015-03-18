@@ -1,0 +1,32 @@
+{% extends "templates/page.html" %}
+{% block title %}Weather Backlog{% endblock %}
+{% block intro %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <table id="backlog-table" class="table table-hover table-condensed">
+	<thead>
+    <tr><th>Date</th><th>Details</th><th>Statistics</th></tr>
+	</thead>
+	<tbody>
+  {% for date,sum in history.iteritems() %}
+  {% set data = sum['summary'] %}
+    <tr>
+      <td><a href="{{date}}/{{commit}}/weather.html">{{date}}</a></td>
+      <td>
+        <p>Commit: {{data['commit']}}</p>
+        <p>Author: {{data['author']}}</p>
+        <p>Title: {{data['title']}}</p>
+      </td>
+      <td>
+        <p>Total: {{data['totalnames']}}</p>
+        <p>Broken: {{data['broken']}}</p>
+        <p>Partial: {{data['partial']}}</p>
+      </td>
+    </tr>
+  {% endfor %}
+	</tbody>
+  </table>
+</div>
+{% endblock %}
