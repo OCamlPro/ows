@@ -262,7 +262,7 @@ def html_weather(aggregatereport,summaryreport,switches):
     dirname = os.path.join("html",shortdate,summaryreport['commit'])
     if not os.path.exists(dirname) :
         os.makedirs(dirname)
-    fname = os.path.join(dirname,"weather.html")
+    fname = os.path.join(dirname,"index.html")
     with open(fname, 'w') as f:
         f.write(output)
  

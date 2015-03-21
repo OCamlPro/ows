@@ -54,8 +54,10 @@ function distcheck {
       echo " ${title}" >> ${dirname}/report-${version}.yaml
       ${DISTCHECK} pef://${TMPDIR}/report-${version}.pef -m --summary -e -s -f >> ${dirname}/report-${version}.yaml
       mv ${TMPDIR}/report-${version}.pef ${dirname}/
-  #    gzip ${REPORTDIR}/${date}/report-${version}.yaml
-  #    gzip ${REPORTDIR}/${date}/report-${version}.pef
+      #gzip ${dirname}/report-${version}.yaml
+      gzip ${dirname}/report-${version}.pef
+    else
+      rm ${TMPDIR}/report-${version}.pef
     fi
   done
 
