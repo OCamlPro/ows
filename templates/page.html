@@ -113,27 +113,28 @@
 		  $(m).find(href).tab().show();
 		});
 		$(this).find('.reasons').click(function(e){
-			var href = $(this).attr("href");
-			$(m).find('#overview').tab().hide();
-			$(m).find("#modal-tab a[href='#details']").tab('show');
-			$(m).find(".collapse.in").collapse('hide');
-			$(m).find(href).collapse('toggle');
-			$(m).find('.package-backlink').click(function(e){
-			  var href = $(this).attr("data-remote");
-			  //console.log(href);
-			  //$(m).modal('hide');
-			  //console.log($(document).find('#package-table a[data-toggle="modal"]'));
-			  //console.log($(document).find('#package-table a[data-remote="'+href+'"]'));
-			  //console.log($(document).find('#package-table > a[data-remote="'+href+'"]'));
-			  $(document).find('a [data-remote="'+href+'"]').modal();
-			});
-			$(m).find('.version-backlink').click(function(e){
-			  var href = $(this).attr("data-remote");
-			  console.log(href);
-			  //console.log($(document).find('a [data-remote="'+href+'"]'));
-			  //$(m).modal('hide');
-			  //$(document).find('a [data-remote="'+href+'"]').modal();
-			});
+		  e.preventDefault();
+		  var href = $(this).attr("href");
+		  $(m).find('#overview').tab().hide();
+		  $(m).find("#modal-tab a[href='#details']").tab('show');
+		  $(m).find(".collapse.in").collapse('hide');
+		  $(m).find(href).collapse('toggle');
+		  $(m).find('.package-backlink').click(function(e){
+			var href = $(this).attr("data-remote");
+			//console.log(href);
+			//$(m).modal('hide');
+			//console.log($(document).find('#package-table a[data-toggle="modal"]'));
+			//console.log($(document).find('#package-table a[data-remote="'+href+'"]'));
+			//console.log($(document).find('#package-table > a[data-remote="'+href+'"]'));
+			$(document).find('a [data-remote="'+href+'"]').modal();
+		  });
+		  $(m).find('.version-backlink').click(function(e){
+			var href = $(this).attr("data-remote");
+			console.log(href);
+			//console.log($(document).find('a [data-remote="'+href+'"]'));
+			//$(m).modal('hide');
+			//$(document).find('a [data-remote="'+href+'"]').modal();
+		  });
 		});
     });
 
