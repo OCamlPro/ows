@@ -1,14 +1,9 @@
 {% extends "templates/page.html" %}
 {% block title %}{% endblock %}
 {% block intro %}
-This service runs reguat regular intervals an evaluation of the solvability of
+This service runs on regular intervals an evaluation of the solvability of
 dependencies in the official OPAM repository, for 4 stable releases of
 OCaml.
-<ul>
- <li>A package is Broken if it is broken for <strong>All</strong> (declared) Switch</li>
- <li>A package is Partially Broken if it is broken on <strong>Some</strong> (declared) Switch</li>
- <li>A package is Correct if it is installable on All (declared) Switch</li>
-</ul>
 {% endblock %}
 {% block content %}
 <div class="container">
@@ -22,7 +17,13 @@ OCaml.
 		<td>
       <a id="#package{{name}}" data-toggle="modal" data-target="#myModal" data-remote="packages/{{name}}.html">{{name}}</a>
       {% for w in summary['weather'][name] %}
-      {{ w }}
+        {% if w == "sunny" %}
+          <i class="wi wi-day-sunny"></i>
+        {% elif w == "cloudy" %}
+          <i class="wi wi-cloudy"></i>
+        {% else %}
+          <i class="wi wi-showers"></i>
+        {% endif %}
       {% endfor %}
     </td>
 		<td>
@@ -30,7 +31,7 @@ OCaml.
 			<span style="color:red"
 				  data-toggle="tooltip"
 				  title="This package is not usable with any compiler">
-				<span class="glyphicon glyphicon glyphicon-thumbs-down"></span>
+				<span class="glyphicon glyphicon-thumbs-down"></span>
 			  </span>
 			{% elif summary['report'][name]['status'] == 'partial' %}
 			  <span style="color:red"

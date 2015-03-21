@@ -13,17 +13,21 @@ except ImportError:
     import pickle
     warning('Pickle C-library not available, falling back to python')
 
+import os.path
+from codecs import open
 import fnmatch
 import os
 import argparse
 import csv
 import datetime as dt
+
 import matplotlib.pyplot as plt
 from matplotlib import dates
-import os.path
+from matplotlib.dates import DateFormatter, date2num
+
 from itertools import groupby, izip_longest
 from operator import itemgetter, attrgetter, methodcaller
-import collections
+
 from collections import defaultdict
 from collections import OrderedDict
 
@@ -31,14 +35,16 @@ from jinja2 import Environment, FileSystemLoader
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 datefmt = "%a %b %d %H:%M:%S %Z %Y"
+#baseurl="http://localhost:8000/"
+baseurl="http://mancoosi.org/~abate/tmp/html/"
 
 def parse(f):
     data = yaml.load(f, Loader=yamlLoader)
     d = {}
     if 'broken-packages' in data : 
         data = { x.replace('-', '_'): data[x] for x in data.keys() }
-        d['broken_packages'] = data['broken_packages']
-        d['total_packages'] = data['total_packages']
+        d['broken_packages'] = int(data['broken_packages'])
+        d['total_packages'] = int(data['total_packages'])
         d['ocaml_switch'] = data['ocaml_switch']
         d['date'] = data['git_date']
         d['commit'] = data['git_commit']
@@ -53,8 +59,21 @@ def parse(f):
                     d['report'][name].append(p)
                 else :
                     d['report'][name] = [p]
-
     return d
+
+def plot(output,history,switches):
+    fig = plt.figure()
+    graph = fig.add_subplot(111)
+    h = [x[1]['summary']['totals'] for x in history if 'summary' in x[1]]
+    ds = [date2num(x[0]) for x in history if 'summary' in x[1]]
+    for s in switches :
+        hs = [x[s][2] for x in h]
+        graph.plot_date(ds,hs,",-",label=s)
+
+    plt.legend(loc='upper left')
+    plt.title('Installable Packages vs Time')
+    fig.autofmt_xdate()
+    plt.savefig(output)
 
 #    { pippo : [ { 1.1 : { 4.01 : ok, 4.02 : broken } }, { 1.2 : { 4.01 : ok, 4.02 : broken } }, ] }
 def aggregate(d):
@@ -65,6 +84,7 @@ def aggregate(d):
     title = None
     author = None
     commit = None
+    totals = {}
     for report in d :
         if report :
             date = report['date']
@@ -72,6 +92,7 @@ def aggregate(d):
             author = report['author']
             commit = report['commit']
             switch = report['ocaml_switch']
+            totals[switch] = (int(report['total_packages']),int(report['broken_packages']),int(report['total_packages']-report['broken_packages']))
             for a in report['summary'] :
                 if 'missing' in a :
                     breaks = int(a['missing']['breaks'])
@@ -162,6 +183,7 @@ def aggregate(d):
     summaryreport['broken'] = 0
     summaryreport['partial'] = 0
     summaryreport['correct'] = 0
+    summaryreport['totals'] = totals
     summaryreport['report'] = summary
     summaryreport['date'] = dt.datetime.strptime(date,datefmt)
     summaryreport['title'] = title
@@ -203,12 +225,24 @@ def html_backlog(history,summaryreport):
     j2_env = Environment(loader=FileSystemLoader(THIS_DIR),trim_blocks=True)
     shortdate = summaryreport['date'].strftime("%Y-%m-%d")
     template = j2_env.get_template('templates/backlog.html')
-    output = template.render({'history': history, 'summary' : summaryreport})
-    dirname = os.path.join("html",shortdate)
+    output = template.render({'history': history, 'summary' : summaryreport, 'baseurl' : baseurl})
+    dirname = os.path.join("html",shortdate,summaryreport['commit'])
     if not os.path.exists(dirname) :
         os.makedirs(dirname)
     fname = os.path.join(dirname,"backlog.html")
-    with open(fname, 'w') as f:
+    with open(fname, 'w', encoding='utf-8') as f:
+        f.write(output)
+
+def html_about(summaryreport):
+    j2_env = Environment(loader=FileSystemLoader(THIS_DIR),trim_blocks=True)
+    shortdate = summaryreport['date'].strftime("%Y-%m-%d")
+    template = j2_env.get_template('templates/about.html')
+    output = template.render({'summary' : summaryreport, 'baseurl' : baseurl})
+    dirname = os.path.join("html",shortdate,summaryreport['commit'])
+    if not os.path.exists(dirname) :
+        os.makedirs(dirname)
+    fname = os.path.join(dirname,"about.html")
+    with open(fname, 'w', encoding='utf-8') as f:
         f.write(output)
  
 def html_weather(aggregatereport,summaryreport,switches):
@@ -216,17 +250,16 @@ def html_weather(aggregatereport,summaryreport,switches):
     shortdate = summaryreport['date'].strftime("%Y-%m-%d")
     for name,versions in aggregatereport.iteritems() :
         template = j2_env.get_template('templates/package.html')
-        output = template.render({'name' : name, 'versions' : versions, 'switches': switches, 'date' : summaryreport['date']})
-        dirname = os.path.join("html",shortdate,'packages')
+        output = template.render({'name' : name, 'versions' : versions, 'switches': switches, 'date' : summaryreport['date'], 'baseurl' : baseurl})
+        dirname = os.path.join("html",shortdate,summaryreport['commit'],'packages')
         if not os.path.exists(dirname) :
             os.makedirs(dirname)
         fname = os.path.join(dirname,name+".html")
-        #print "Saving ",fname
         with open(fname, 'w') as f:
             f.write(output)
     template = j2_env.get_template('templates/weather.html')
-    output = template.render({'summary' : summaryreport, 'switches': switches})
-    dirname = os.path.join("html",shortdate)
+    output = template.render({'summary' : summaryreport, 'switches': switches, 'baseurl' : baseurl})
+    dirname = os.path.join("html",shortdate,summaryreport['commit'])
     if not os.path.exists(dirname) :
         os.makedirs(dirname)
     fname = os.path.join(dirname,"weather.html")
@@ -250,8 +283,8 @@ def html_summary(summaryreport,switches):
                 rows = map(lambda x: list(x),izip_longest(*(sorted(rows,key=lambda x : x[0]))))
                 template = j2_env.get_template('templates/packagelist.html')
                 title = "%s %s (ows : %s)" % (name,version,summaryreport['date'])
-                output = template.render({'title' : title, 'summary' : rows, 'switches': switches})
-                dirname = os.path.join("html",shortdate,'summary')
+                output = template.render({'title' : title, 'summary' : rows, 'switches': switches, 'baseurl' : baseurl})
+                dirname = os.path.join("html",shortdate,summaryreport['commit'],'summary')
                 if not os.path.exists(dirname) :
                     os.makedirs(dirname)
                 fname = os.path.join(dirname,name+version+".html")
@@ -271,8 +304,8 @@ def html_summary(summaryreport,switches):
                 rows = map(lambda x: list(x),izip_longest(*(sorted(rows,key=lambda x : x[0]))))
                 template = j2_env.get_template('templates/packagelist.html')
                 title = "%s %s # %s %s (ows : %s)" % (pkg1[0],pkg1[1],pkg2[0],pkg2[1],summaryreport['date'])
-                output = template.render({'title': title, 'summary' : rows, 'switches': switches})
-                dirname = os.path.join("html",shortdate,'summary')
+                output = template.render({'title': title, 'summary' : rows, 'switches': switches, 'baseurl' : baseurl})
+                dirname = os.path.join("html",shortdate,summaryreport['commit'],'summary')
                 if not os.path.exists(dirname) :
                     os.makedirs(dirname)
                 fname = os.path.join(dirname,pkg1[0]+pkg1[1]+"-"+pkg2[0]+pkg2[1]+".html")
@@ -281,8 +314,8 @@ def html_summary(summaryreport,switches):
                     f.write(output)
 
     template = j2_env.get_template('templates/summary.html')
-    output = template.render({'summary' : summaryreport, 'switches': switches})
-    dirname = os.path.join("html",shortdate)
+    output = template.render({'summary' : summaryreport, 'switches': switches, 'baseurl' : baseurl})
+    dirname = os.path.join("html",shortdate,summaryreport['commit'])
     if not os.path.exists(dirname) :
         os.makedirs(dirname)
     fname = os.path.join(dirname,"summary.html")
@@ -341,6 +374,7 @@ def main():
 
     weather = {}
     history = list(h.items())
+    today = h.keys().index(sr['date'])
     # we assume the monotonicity of the opam repo
     for p,v in sr['report'].iteritems() :
         if v['percent'] == 0 :
@@ -350,7 +384,6 @@ def main():
         else :
             weather_today = "stormy"
         if len(history) > 1 :
-            today = h.keys().index(sr['date'])
             yesterday = today - 1
             if p in history[yesterday][1]['summary']['weather'] : 
                 weather_yesterday = list(history[yesterday][1]['summary']['weather'][p])[-1]
@@ -376,8 +409,16 @@ def main():
     newsummary = { 'switches' : switches , 'summary' : sr }
     h[sr['date']] = newsummary
 
+    print "About"
+    html_about(sr)
+
     print "BackLog"
-    html_backlog(h,sr)
+    html_backlog(history[today-10:today-1][::-1],sr)
+
+    print "Plot"
+    shortdate = sr['date'].strftime("%Y-%m-%d")
+    output = os.path.join("html",shortdate,sr['commit'],"plot.png")
+    plot(output,history[:today],switches)
 
     f = open(picklehist,'wb')
     pickle.dump(h,f)

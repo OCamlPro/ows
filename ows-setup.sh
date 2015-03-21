@@ -151,7 +151,7 @@ EOF
 }
 
 function html {
-  cp -a js css fonts html
+  cp -a js css fonts static/* html/ 
 }
 
 
@@ -161,6 +161,6 @@ function html {
 
 from="2012-05-19"
 #from="2012-08-24"
-to="2012-10-19"
+#to="2012-10-19"
 #from="2015-02-27"
 cd ${OPAMREPO} && replay $from $to

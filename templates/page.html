@@ -4,11 +4,12 @@
     <title>Opam Weather Service</title>
 	<meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../css/bootstrap.min.css" rel="stylesheet" media="screen">
-	<link rel="stylesheet" href="../css/bootstrap.vertical-tabs.min.css">
-	<link rel="stylesheet" href="../css/jquery.dataTables.css">
-	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
-	<link rel="stylesheet" href="../css/weather-icons.min.css">
+	<link rel="stylesheet" href="{{baseurl}}/css/bootstrap.min.css" rel="stylesheet" media="screen">
+	<link rel="stylesheet" href="{{baseurl}}/css/bootstrap.vertical-tabs.min.css">
+	<link rel="stylesheet" href="{{baseurl}}/css/jquery.dataTables.css">
+	<!--link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"-->
+	<link rel="stylesheet" href="{{baseurl}}/css/weather-icons.min.css">
+	<link rel="stylesheet" href="{{baseurl}}/css/custom.css">
   </head>
   <body>
 
@@ -25,8 +26,10 @@
 		  </div>
 		  <nav class="collapse navbar-collapse" role="navigation">
 			<ul class="nav navbar-nav">
-			  <li><a href="#">Backlog</a></li>
-			  <li><a href="#">About</a></li>
+			  <li><a href="weather.html">Weather</a></li>
+			  <li><a href="summary.html">Summary</a></li>
+			  <li><a href="backlog.html">Backlog</a></li>
+			  <li><a href="about.html">About</a></li>
 			</ul>
 		  </nav>
 		</div>
@@ -34,14 +37,17 @@
 
 	  <div class="container">
 		  <div class="row">
-			<div class="col-md-7">
+			<div class="col-md-4">
 			  <h1>OCaml Weather Service
 				<p class="lead">Powered by opam/dose</p>
 			  </h1>
 			  <h3>{% block title %}{% endblock %}</h3>
 			  <p>{% block intro %}{% endblock %}</p>
 		  </div>
-		  <div class="col-md-5">
+		  <div class="col-md-4">
+			<img class="img-responsive" alt="Installable packages vs Time" src="plot.png"/>
+		  </div>
+		  <div class="col-md-4">
 			  <div class="well well-lg"> 
 				<div class="row">
 				  <div class="col-sm-12">
@@ -61,11 +67,18 @@
 			  </div>
 		  </div>
 		</div> 
-	</div><!--/container-->
+	   </div><!--/container-->
 
     <div class="container">
 	  {% block content %}{% endblock %}
     </div>
+
+	<div id="footer">
+	  <div class="container">
+		<p>OWS is free and open source software. Get the <a href="https://github.com/abate/ows">Code (GPL3+)</a>.</p>
+		<p>Author(s) : Pietro Abate (C) 2015</p>
+	  </div>
+	</div>
 
 	<div id="myModal" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
 	  <div class="modal-dialog modal-lg" style="height:80vh">
@@ -73,9 +86,9 @@
 	  </div>
 	</div>
 
-	<script src="../js/jquery.min.js"></script>
-	<script src="../js/bootstrap.min.js"></script>
-	<script src="../js/jquery.dataTables.js"></script>
+	<script src="{{baseurl}}/js/jquery.min.js"></script>
+	<script src="{{baseurl}}/js/bootstrap.min.js"></script>
+	<script src="{{baseurl}}/js/jquery.dataTables.js"></script>
 	<script type="text/javascript">
     // populate the modal with the content of the href
     $('#myModal').on('loaded.bs.modal', function (e) {
