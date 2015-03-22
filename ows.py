@@ -50,6 +50,7 @@ def parse(f):
         d['total_packages'] = int(data['total_packages'])
         d['switch'] = data['ocaml_switch']
         d['date'] = data['git_date']
+        d['date'] = dt.datetime.strptime(data['git_date'],datefmt)
         d['commit'] = data['git_commit']
         d['title'] = data['git_title']
         d['author'] = data['git_author']
@@ -57,10 +58,7 @@ def parse(f):
         d['report'] = {}
         for name, group in groupby(data['report'], lambda x: x['package']):
             for p in group:
-                if name in d['report'] :
-                    d['report'][name].append(p)
-                else :
-                    d['report'][name] = [p]
+                d['report'].setdefault(name,[p]).append(p)
     return d
 
 def plot(options,history,switches):
@@ -91,34 +89,22 @@ def aggregate(d):
             author = report['author']
             commit = report['commit']
             switch = report['switch']
-            totals[switch] = (int(report['total_packages']),int(report['broken_packages']),int(report['total_packages']-report['broken_packages']))
+            tp,bp = report['total_packages'],report['broken_packages']
+            totals[switch] = (tp,bp,tp - bp)
             for a in report['summary'] :
                 if 'missing' in a :
                     breaks = int(a['missing']['breaks'])
                     pkg = (a['missing']['pkg']['package'],a['missing']['pkg']['version'])
                     s = { 'breaks' : breaks , 'packages' : a['missing']['packages'] }
-                    if pkg in aggregatesummary['missing']:
-                        aggregatesummary['missing'][pkg][switch] = s
-                    else :
-                        aggregatesummary['missing'][pkg] = { switch :  s }
-                    if 'total' in aggregatesummary['missing'][pkg] :
-                        aggregatesummary['missing'][pkg]['total'] += breaks
-                    else :
-                        aggregatesummary['missing'][pkg]['total'] = breaks
-
+                    aggregatesummary['missing'].setdefault(pkg,{ switch :  s }).update({ switch :  s })
+                    aggregatesummary['missing'][pkg]['total'] = aggregatesummary['missing'][pkg].get('total',0) + breaks
                 elif 'conflict' in a :
                     pkg1 = (a['conflict']['pkg1']['package'],a['conflict']['pkg1']['version'])
                     pkg2 = (a['conflict']['pkg2']['package'],a['conflict']['pkg2']['version'])
                     breaks = int(a['conflict']['breaks'])
                     s = { 'breaks' : breaks , 'packages' : a['conflict']['packages'] }
-                    if (pkg1,pkg2) in aggregatesummary['conflict'] :
-                        aggregatesummary['conflict'][(pkg1,pkg2)][switch] = s
-                    else :
-                        aggregatesummary['conflict'][(pkg1,pkg2)] = { switch : s }
-                    if 'total' in aggregatesummary['conflict'][(pkg1,pkg2)] :
-                        aggregatesummary['conflict'][(pkg1,pkg2)]['total'] += breaks
-                    else :
-                        aggregatesummary['conflict'][(pkg1,pkg2)]['total'] = breaks
+                    aggregatesummary['conflict'].setdefault((pkg1,pkg2),{ switch :  s }).update({ switch :  s })
+                    aggregatesummary['conflict'][(pkg1,pkg2)]['total'] = aggregatesummary['conflict'][(pkg1,pkg2)].get('total',0) + breaks
 
             for name, l in report['report'].iteritems() :
                 if name not in aggregatereport :
@@ -154,10 +140,7 @@ def aggregate(d):
                                     dm.append(unsatdep)
                                 else :
                                     indirect = True
-                                    if pkgname not in idm :
-                                        idm[pkgname] = [pkgvers]
-                                    else :
-                                        idm[pkgname].append(pkgvers)
+                                    idm.setdefault(pkgname,[pkgvers]).append(pkgvers)
 
                             if 'conflict' in p :
                                 p1 = p['conflict']['pkg1']['package']
@@ -172,23 +155,12 @@ def aggregate(d):
                                     idc.append(((p1,v1),(p2,v2)))
 
                     p = (package['status'],(direct,indirect),dc,dm,idc,idm,r)
-                    if ver in aggregatereport[name] :
-                        aggregatereport[name][ver][switch] = p
-                    else :
-                        aggregatereport[name][ver] = { switch : p }
+                    aggregatereport[name].setdefault(ver, { switch : p }).update({ switch : p })
 
-    summaryreport = {}
-    summaryreport['totalnames'] = len(aggregatereport)
-    summaryreport['broken'] = 0
-    summaryreport['partial'] = 0
-    summaryreport['correct'] = 0
-    summaryreport['totals'] = totals
-    summaryreport['report'] = summary
-    summaryreport['date'] = dt.datetime.strptime(date,datefmt)
-    summaryreport['title'] = title
-    summaryreport['author'] = author
-    summaryreport['commit'] = commit
-    summaryreport['summary'] = aggregatesummary
+    summaryreport = {
+            'broken' : 0, 'partial': 0, 'correct' : 0, 'totalnames' : len(aggregatereport),
+            'totals' : totals, 'report' : summary, 'summary' : aggregatesummary,
+            'date' : date, 'title' : title, 'author' : author, 'commit' : commit }
 
     switchnumber = len(d)
     for name,switches in summary.iteritems() :
@@ -256,6 +228,13 @@ def html_about(options,summaryreport):
     template = j2_env.get_template('templates/about.html')
     output = template.render({'summary' : summaryreport, 'baseurl' : options['baseurl']})
     fname = os.path.join(options['dirname'],"about.html")
+    save_page(output,fname)
+ 
+def html_howto(options,summaryreport):
+    print "Compiling howto Page"
+    template = j2_env.get_template('templates/howto.html')
+    output = template.render({'summary' : summaryreport, 'baseurl' : options['baseurl']})
+    fname = os.path.join(options['dirname'],"howto.html")
     save_page(output,fname)
  
 def html_weather(options,aggregatereport,summaryreport,switches):
@@ -401,7 +380,7 @@ def main():
 
     html_weather(options,ar,sr,switches)
     html_summary(options,sr,switches)
-    html_about(options,sr)
+    html_howto(options,sr)
     html_backlog(options,history[today-10:today-1][::-1],sr)
     plot(options,history[:today],switches)
 

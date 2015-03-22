@@ -9,7 +9,7 @@ for i in $1/*; do
   date=$(date --date "$d" '+%s')
   if [ $? = 0 ]; then
     if [ $date -le $today ]; then
-      tar zcvf $1/archive/$d.tgz $i
+      GZIP='--rsyncable' tar zcvf $1/archive/$d.tgz $i
       rm -Rf $i
     fi
   fi
