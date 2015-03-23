@@ -1,0 +1,74 @@
+#!/bin/bash
+
+
+function archive {
+  local age=$(date --date="-$1 days" '+%s')
+  local dir=$2
+  for i in $1/*; do
+    d=$(basename $i)
+    date=$(date --date "$d" '+%s')
+    if [ $? = 0 ]; then
+      if [ $date -le $age ]; then
+        GZIP='--rsyncable' tar zcvf $dir/archive/$d.tgz $i
+        rm -Rf $i
+      fi
+    fi
+  done
+  set -x
+  rm -Rf $dir/latest
+  mkdir -p $dir/latest
+  latest=$(ls -d1 $dir/????-??-?? | sort -r | head -1)
+  latest=$(basename $latest)/$(ls -1 ${latest})
+  echo $latest
+  cd $dir
+  ln -s ../$latest latest/day
+  cd -
+}
+
+# Usage info
+show_help() {
+cat << EOF
+Usage: ${0##*/} [-h] [AGE] [DIR]
+Archive old ows reports
+
+    -h          display this help and exit
+
+AGE is an integer expressing the age of ows reports (default 11 days).
+i.e. ${0##*/} 10 will archive all ows reports older then
+10 days before today. DIR is the directory containing
+the html ows reports.
+
+EOF
+}
+
+age=""
+verbose=0
+
+OPTIND=1
+while getopts "hvs:" opt; do
+    case "$opt" in
+        h)
+            show_help
+            exit 0
+            ;;
+        '?')
+            show_help >&2
+            exit 1
+            ;;
+    esac
+done
+shift "$((OPTIND-1))" # Shift off the options and optional --.
+
+dir=$1
+age=${2:-"11"}
+
+if [ -d $dir ]; then
+  mkdir -p $dir/archive
+else
+  echo "$dir : Not such directory"
+  show_help >&2
+  exit 1
+fi
+
+archive $age $dir
+#rsync -avz html/ hazel.rocq.inria.fr:web/public_html/tmp/html/
