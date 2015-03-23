@@ -85,9 +85,9 @@
 					 {% for ((p1,v1),(p2,v2)) in dc %}
 					 <li>These packages are in conflict : 
 					   <a href="#package{{p1}}" class="package-backlink">{{ p1 }}</a>
-					   (= <a href="#{{p1}}{{v1|replace(".","_")}}" class="version-backlink">{{v1}}</a>) 
-					   (<a href="#package{{p1}}" class="package-backlink">{{ p1 }}</a>
-					   (= <a href="#{{p2}}{{v2|replace(".","_")}}" class="version-backlink">{{ v2 }}</a>) </li>
+					   (= <a href="#package{{p1}}" version="{{v1|replace(".","_")}}" class="version-backlink">{{ v1 }}</a>) 
+					   (<a href="#package{{p2}}" class="package-backlink">{{ p2 }}</a>
+					   (= <a href="#package{{p2}}" version="{{v2|replace(".","_")}}" class="version-backlink">{{ v2 }}</a>) </li>
 					 {% endfor %}
 				   </ul></p>
 				   {% endif %}
@@ -98,7 +98,7 @@
 					 {% for pkg,verlist in idm.iteritems() %}
 					 <a href="#package{{pkg}}" class="package-backlink">{{ pkg }}</a> (versions :
 						{% for v in verlist %}
-							<a href="#{{pkg}}{{v|replace(".","_")}}" class="version-backlink">{{ v }}</a>
+						  <a href="#package{{pkg}}" version="{{v|replace(".","_")}}" class="version-backlink">{{ v }}</a>
 						  {% if not loop.last %},{% endif %}
 						{% endfor %}
 					  )
@@ -107,9 +107,9 @@
 					   {% for ((p1,v1),(p2,v2)) in idc %}
 					   <li>These packages are in conflict : 
 						 <a href="#package{{p1}}" class="package-backlink">{{ p1 }}</a>
-						 (= <a href="#{{p1}}{{v1|replace(".","_")}}" class="version-backlink">{{v1}}</a>) 
-						 (<a href="#package{{p1}}" class="package-backlink">{{ p1 }}</a>
-						 (= <a href="#{{p2}}{{v2|replace(".","_")}}" class="version-backlink">{{ v2 }}</a>) </li>
+						 (= <a href="#package{{p1}}" version="{{v1|replace(".","_")}}" class="version-backlink">{{ v1 }}</a>) 
+						 (<a href="#package{{p2}}" version="{{v2|replace(".","_")}}" class="package-backlink">{{ p2 }}</a>
+						 (= <a href="#package{{p2}}" version="{{v2|replace(".","_")}}" class="version-backlink">{{ v2 }}</a>) </li>
 					   {% endfor %}
 					 </ul></p>
 					 ,that is/are an indirect dependency of {{ name }}, is/are broken.

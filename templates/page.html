@@ -30,7 +30,7 @@
 			  <li><a href="summary.html">Summary</a></li>
 			  <li><a href="backlog.html">Backlog</a></li>
 			  <li><a href="howto.html">HowTo</a></li>
-			  <li><a href="about.html">About</a></li>
+			  <li><a href="credits.html">Credits</a></li>
 			</ul>
 		  </nav>
 		</div>
@@ -93,21 +93,21 @@
 	<script type="text/javascript">
     // populate the modal with the content of the href
     $('#myModal').on('loaded.bs.modal', function (e) {
-        $(this).find('#modal-table').DataTable({
+	    var table = $(this).find('#modal-table');
+        table.DataTable({
 		  "bInfo" : false,
 		  "retrieve": true,
-//		  "scrollY": "250px",
-//        "scrollCollapse": true,
+		//  "scrollY": "250px",
+		//  "scrollCollapse": true,
+		  "paging": false,
+		//  "jQueryUI": true,
 		  "bFilter": false,
-          "paging":         false,
 		  "ordering": false,
-//          "columnDefs": [
-//			{ "orderable": false, "targets": [{{ range(1,(switches|count) + 1)|join(", ") }}] }
-//          ],
-//		  "order": [[ 0, "desc" ]],
         });
+		//table.columns.adjust().draw();
 		var m = $(this);
 		$(this).find("#modal-tab a").click(function(e){
+		  e.preventDefault();
 		  var href = $(this).attr("href");
 		  $(m).find(".collapse.in").collapse('hide');
 		  $(this).addClass('active');
@@ -120,22 +120,27 @@
 		  $(m).find("#modal-tab a[href='#details']").tab('show');
 		  $(m).find(".collapse.in").collapse('hide');
 		  $(m).find(href).collapse('toggle');
-		  $(m).find('.package-backlink').click(function(e){
-			var href = $(this).attr("data-remote");
-			//console.log(href);
-			//$(m).modal('hide');
-			//console.log($(document).find('#package-table a[data-toggle="modal"]'));
-			//console.log($(document).find('#package-table a[data-remote="'+href+'"]'));
-			//console.log($(document).find('#package-table > a[data-remote="'+href+'"]'));
-			$(document).find('a [data-remote="'+href+'"]').modal();
-		  });
-		  $(m).find('.version-backlink').click(function(e){
-			var href = $(this).attr("data-remote");
-			console.log(href);
-			//console.log($(document).find('a [data-remote="'+href+'"]'));
-			//$(m).modal('hide');
-			//$(document).find('a [data-remote="'+href+'"]').modal();
-		  });
+		});
+		$(m).find('.package-backlink').click(function(e){
+		  e.preventDefault();
+		  var p = $(this).attr("href");
+		  m.removeData('bs.modal');
+		  page = window.location.pathname.split( '/' ).slice(-1)[0];
+		  if (page != 'index.html') {
+			// from the summary page
+			window.location = 'index.html'+p;
+		  }
+		  else
+			document.getElementById(p).click();
+		});
+		$(m).find('.version-backlink').click(function(e){
+		  e.preventDefault();
+		  var p = $(this).attr("href");
+		  var v = $(this).attr("version");
+		  // this does not do anything different from above. it should
+		  // select a specific version in the modal table
+		  m.removeData('bs.modal');
+		  document.getElementById(p).click();
 		});
     });
 
@@ -147,21 +152,17 @@
 	$(document).ready(function() {
 	    // init the dataTables object in the main page
 		$('#package-table').DataTable( {
+		  "stateSave": true,
 		  "ordering": false,
-		  //"columnDefs": [
-		//	{ "orderable": false, 
-		//	  "targets": [{{ range(1,(switches|count) + 2)|join(", ") }}] }
-		//  ],
-		  //"order": [[ 1, "desc" ]],
+		  "paging": false,
 		} );
 		$('#summary-table').DataTable( {
 		  "ordering": false,
-		  //"columnDefs": [
-		//	{ "orderable": false, 
-		//	  "targets": [{{ range(1,(switches|count) + 2)|join(", ") }}] }
-		//  ],
-		  //"order": [[ 1, "desc" ]],
+		  "stateSave": true,
+		  "paging": false,
 		} );
+		if (window.location.hash)
+		  document.getElementById(window.location.hash).click();
 	} );
 
     </script>

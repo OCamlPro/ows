@@ -9,11 +9,16 @@
 	  <tr>{% for e in summary[0] %}<th>{{ e }}</th>{% endfor %}</tr>
 	</thead>
 	<tbody>
-	  {% for r in summary[1:] %}
+	  {% for row in summary[1:] %}
 	  <tr>
-		{% for v in r %}
+		{% for v in row %}
 		  {% if v is defined %}
-		  <td><a data-toggle="tooltip" title="{% for vv in v[1] %} {{ vv }} {% endfor %}">{{ v[0] }}</a></td>
+		  <td><a
+			  href="#package{{v[0]}}"
+			  class="package-backlink"
+			  data-toggle="tooltip" 
+			  title="{% for vv in v[1] %} {{ vv }} {% endfor %}">{{ v[0] }}</a>
+		  </td>
 		  {% else %}
 			<td></td>
 		  {% endif %}

@@ -223,15 +223,15 @@ def html_backlog(options,history,summaryreport):
     fname = os.path.join(options['dirname'],"backlog.html")
     save_page(output,fname)
 
-def html_about(options,summaryreport):
-    print "Compiling About Page"
-    template = j2_env.get_template('templates/about.html')
+def html_credits(options,summaryreport):
+    print "Compiling Credits Page"
+    template = j2_env.get_template('templates/credits.html')
     output = template.render({'summary' : summaryreport, 'baseurl' : options['baseurl']})
-    fname = os.path.join(options['dirname'],"about.html")
+    fname = os.path.join(options['dirname'],"credits.html")
     save_page(output,fname)
  
 def html_howto(options,summaryreport):
-    print "Compiling howto Page"
+    print "Compiling Howto Page"
     template = j2_env.get_template('templates/howto.html')
     output = template.render({'summary' : summaryreport, 'baseurl' : options['baseurl']})
     fname = os.path.join(options['dirname'],"howto.html")
@@ -371,6 +371,7 @@ def main():
 
     print "Considering ", args.reportdir[0]
     (switches,ar,sr) = load_or_parse(args.reportdir[0],args.nocache)
+    print args.baseurl[0]
     options = {'dirname' : setup(sr), 'baseurl' : args.baseurl[0] }
 
     h = load_history(args.history[0],sr['date'])
@@ -381,6 +382,7 @@ def main():
     html_weather(options,ar,sr,switches)
     html_summary(options,sr,switches)
     html_howto(options,sr)
+    html_credits(options,sr)
     html_backlog(options,history[today-10:today-1][::-1],sr)
     plot(options,history[:today],switches)
 
