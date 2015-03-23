@@ -55,7 +55,7 @@ function distcheck {
       ${DISTCHECK} pef://${TMPDIR}/report-${version}.pef -m --summary -e -s -f >> ${dirname}/report-${version}.yaml
       mv ${TMPDIR}/report-${version}.pef ${dirname}/
       #gzip ${dirname}/report-${version}.yaml
-      gzip ${dirname}/report-${version}.pef
+      gzip -f ${dirname}/report-${version}.pef
     else
       rm ${TMPDIR}/report-${version}.pef
     fi
@@ -156,13 +156,69 @@ function html {
   cp -a js css fonts static/* html/ 
 }
 
+##########################
 
-#if [ ! -d ${OPAMROOT} ]; then
-  setup
-#fi
+# Usage info
+show_help() {
+cat << EOF
+Usage: ${0##*/} [-hvs] [FROM] [TO]
+Bootstrap and update opam repositories for OWS.
+
+    -h          display this help and exit
+    -s          setup the a local opam repository
+    -v          verbose mode. Can be used multiple times for increased
+                verbosity.
+
+FROM and TO define the interval to consider. Bu default TO is set to the
+current date and FROM is 10 days ago. Opam opened their from shop the 2012-05-19.
+
+Ex: ${0##*/} 2015-03-12 2015-03-13
+
+EOF
+}
+
+# Initialize our own variables:
+from=""
+to=""
+verbose=0
+init=false
+
+OPTIND=1
+while getopts "hvs:" opt; do
+    case "$opt" in
+        h)
+            show_help
+            exit 0
+            ;;
+        v)  verbose=$((verbose+1))
+            ;;
+        s)  init=1
+            ;;
+        '?')
+            show_help >&2
+            exit 1
+            ;;
+    esac
+done
+shift "$((OPTIND-1))" # Shift off the options and optional --.
+
+if [ init = true ]; then
+  if [ ! -d ${OPAMROOT} ]; then
+    setup
+  fi
+fi
 
 from="2012-05-19"
 #from="2012-08-24"
 #to="2012-10-19"
-#from="2015-02-27"
+from="2015-02-27"
+from=${1:-$(/bin/date --date "10 days ago" +%Y-%m-%d)}
+to=${2:-$(/bin/date +%Y-%m-%d)}
+
+echo "from $from"
+echo "to $to"
+echo $init
+
 cd ${OPAMREPO} && replay $from $to
+
+
