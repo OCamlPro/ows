@@ -14,7 +14,7 @@
 		{% for v in row %}
 		  {% if v is defined %}
 		  <td><a
-			  href="#package{{v[0]}}"
+			  href="packages/{{v[0]}}.html"
 			  class="package-backlink"
 			  data-toggle="tooltip" 
 			  title="{% for vv in v[1] %} {{ vv }} {% endfor %}">{{ v[0] }}</a>

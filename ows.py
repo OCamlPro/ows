@@ -336,7 +336,7 @@ def load_or_parse(reportdir,nocache):
     return (switches,ar,sr)
 
 def load_history(history,date):
-    print "Load History "
+    print "Load History ",history
     h = {}
     if os.path.exists(history) :
         f = open(history,'r')
@@ -364,17 +364,18 @@ def main():
     parser.add_argument('-v', '--verbose')
     parser.add_argument('-d', '--debug', action='store_true', default=False)
     parser.add_argument('--nocache', action='store_true', default=False)
-    parser.add_argument('--baseurl', type=str, nargs=1, help="base url", default="http://localhost:8000/")
-    parser.add_argument('--history', type=str, nargs=1, help="history database", default=os.path.join("reports",'history.pickle'))
+    parser.add_argument('--baseurl', type=str, help="base url", default="http://localhost:8000/")
+    parser.add_argument('--history', type=str, help="history database", default=os.path.join("reports",'history.pickle'))
     parser.add_argument('reportdir', type=str, nargs=1, help="dataset")
     args = parser.parse_args()
 
     print "Considering ", args.reportdir[0]
     (switches,ar,sr) = load_or_parse(args.reportdir[0],args.nocache)
-    print args.baseurl[0]
-    options = {'dirname' : setup(sr), 'baseurl' : args.baseurl[0] }
+    print "baseurl: ", args.baseurl
+    print "history: ",args.history
+    options = {'dirname' : setup(sr), 'baseurl' : args.baseurl }
 
-    h = load_history(args.history[0],sr['date'])
+    h = load_history(args.history,sr['date'])
     history = list(h.items())
     today = h.keys().index(sr['date'])
     sr['weather'] = weather(sr['report'],history,today)
@@ -386,7 +387,7 @@ def main():
     html_backlog(options,history[today-10:today-1][::-1],sr)
     plot(options,history[:today],switches)
 
-    save_history(args.history[0],h,sr,switches)
+    save_history(args.history,h,sr,switches)
     print
 
 if __name__ == '__main__':

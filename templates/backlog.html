@@ -14,7 +14,7 @@
     {% if sum['summary'] is defined %}
       {% set data = sum['summary'] %}
       <tr>
-        <td><a href="../../{{date.strftime("%Y-%m-%d")}}/{{data['commit']}}/weather.html">{{date}}</a></td>
+        <td><a href="../../{{date.strftime("%Y-%m-%d")}}/{{data['commit']}}/index.html">{{date}}</a></td>
         <td>
           <p>Commit: {{data['commit']}}</p>
           <p>Author: {{data['author']}}</p>

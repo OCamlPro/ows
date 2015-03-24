@@ -4,7 +4,7 @@
 function archive {
   local age=$(date --date="-$1 days" '+%s')
   local dir=$2
-  for i in $1/*; do
+  for i in $dir/*; do
     d=$(basename $i)
     date=$(date --date "$d" '+%s')
     if [ $? = 0 ]; then

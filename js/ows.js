@@ -32,13 +32,8 @@
 		  e.preventDefault();
 		  var p = $(this).attr("href");
 		  m.removeData('bs.modal');
-		  page = window.location.pathname.split( '/' ).slice(-1)[0];
-		  if (page != 'index.html') {
-			// from the summary page
-			window.location = 'index.html'+p;
-		  }
-		  else
-			document.getElementById(p).click();
+      $('#myModal').modal({ show: false, remote: p });
+      $('#myModal').modal('show');
 		});
 		$(m).find('.version-backlink').click(function(e){
 		  e.preventDefault();
@@ -47,7 +42,8 @@
 		  // this does not do anything different from above. it should
 		  // select a specific version in the modal table
 		  m.removeData('bs.modal');
-		  document.getElementById(p).click();
+      $('#myModal').modal({ show: false, remote: p });
+      $('#myModal').modal('show');
 		});
     });
 
