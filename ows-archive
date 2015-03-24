@@ -1,42 +1,40 @@
 #!/bin/bash
 
-
 function archive {
   local age=$(date --date="-$1 days" '+%s')
   local dir=$2
   for i in $dir/*; do
-    d=$(basename $i)
-    date=$(date --date "$d" '+%s')
-    if [ $? = 0 ]; then
-      if [ $date -le $age ]; then
-        GZIP='--rsyncable' tar zcvf $dir/archive/$d.tgz $i
-        rm -Rf $i
+    if [[ $i == $dir/20* ]] ; then
+      d=$(basename $i)
+      date=$(date --date "$d" '+%s')
+      if [ $? = 0 ]; then
+        if [ $date -le $age ]; then
+          echo "Create Archive $dir/archive/$d.tgz"
+          GZIP='--rsyncable' tar zcf $dir/archive/$d.tgz $i
+          rm -Rf $i
+        fi
       fi
     fi
   done
-  set -x
   rm -Rf $dir/latest
   mkdir -p $dir/latest
   latest=$(ls -d1 $dir/????-??-?? | sort -r | head -1)
   latest=$(basename $latest)/$(ls -1 ${latest})
-  echo $latest
-  cd $dir
+  cd $dir 
   ln -s ../$latest latest/day
-  cd -
 }
 
 # Usage info
 show_help() {
 cat << EOF
-Usage: ${0##*/} [-h] [AGE] [DIR]
+Usage: ${0##*/} [-h] [-a AGE] [DIR]
 Archive old ows reports
 
     -h          display this help and exit
+    -a AGE      AGE is an integer expressing the age of ows 
+                reports (default 11 days).
 
-AGE is an integer expressing the age of ows reports (default 11 days).
-i.e. ${0##*/} 10 will archive all ows reports older then
-10 days before today. DIR is the directory containing
-the html ows reports.
+DIR is the directory containing the html ows reports.
 
 EOF
 }
@@ -45,11 +43,14 @@ age=""
 verbose=0
 
 OPTIND=1
-while getopts "hvs:" opt; do
+while getopts "ha:" opt; do
     case "$opt" in
         h)
             show_help
             exit 0
+            ;;
+        a)
+            age=$OPTARG
             ;;
         '?')
             show_help >&2
@@ -59,8 +60,13 @@ while getopts "hvs:" opt; do
 done
 shift "$((OPTIND-1))" # Shift off the options and optional --.
 
+if [ ! $# -eq 1 ]
+  then
+    echo "Report directory not supplied"
+fi
+
 dir=$1
-age=${2:-"11"}
+age=${age:-"11"}
 
 if [ -d $dir ]; then
   mkdir -p $dir/archive
@@ -70,5 +76,6 @@ else
   exit 1
 fi
 
+echo "Archiving all reports older then $age days in $dir/archive"
 archive $age $dir
 #rsync -avz html/ hazel.rocq.inria.fr:web/public_html/tmp/html/
