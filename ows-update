@@ -41,7 +41,7 @@ function distcheck {
   local title=$4
 
   for version in ${VERSIONS}; do
-    ${OPAM} config cudf-universe --switch ${version} > ${TMPDIR}/report-${version}.pef
+    ${OPAM} config pef-universe --switch ${version} > ${TMPDIR}/report-${version}.pef
     if [ -s ${TMPDIR}/report-${version}.pef ] ; then
       local dirname=${REPORTDIR}/$(date --date "$date" +%Y-"%m-%d")/${commit}/
       mkdir -p ${dirname}
@@ -49,7 +49,6 @@ function distcheck {
       echo "git-date: ${date}" >> ${dirname}/report-${version}.yaml
       echo "git-commit: ${commit}" >> ${dirname}/report-${version}.yaml
       echo "git-author: \"${author}\"" >> ${dirname}/report-${version}.yaml
-      #title=$(echo ${title} | sed 's/"/\"/g')
       echo "git-title: |" >> ${dirname}/report-${version}.yaml
       echo " ${title}" >> ${dirname}/report-${version}.yaml
       ${DISTCHECK} pef://${TMPDIR}/report-${version}.pef -m --summary -e -s -f >> ${dirname}/report-${version}.yaml
