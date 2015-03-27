@@ -9,6 +9,7 @@
 	  <ul class="nav nav-tabs tabs-left sideways" id="modal-tab">
 		<li class="active"><a href="#overview" data-toggle="tab">Overview</a></li>
 		<li>Details</li>
+		<li>Graph</li>
 	  </ul>
   </div>
 
@@ -23,22 +24,26 @@
 		  {% for version, result in versions.iteritems() %}
 		  <tr>
 			<td><!--a id="#{{name}}{{version|replace(".","_")}}"-->{{version}}</a></td>
-			{% for s in switches %}
+			{% for switch in switches %}
 			  <td>
-				{% if result[s] is defined %}
-				  {% if result[s][0] == 'broken' %}
+				{% if result[switch] is defined %}
+				  {% if result[switch][0] == 'broken' %}
 					<span style="color:red"
 						  data-toggle="tooltip"
-						  title="This package is unusable with OCaml {{s}}">
-					  <span class="glyphicon glyphicon-fire"></span>
-					  <span class="glyphicon glyphicon-fire"></span>
+						  title="This package is unusable with OCaml {{switch}}">
+					  <span class="glyphicon glyphicon-remove"></span>
 					</span>
-					<a class="btn btn-xs reasons" href="#p{{version|replace(".","_")}}_{{s|replace(".","_")}}"
+					<a class="btn btn-xs reasons" href="#p{{version|replace(".","_")}}_{{switch|replace(".","_")}}"
 					   data-toggle="tooltip"
 					   title="Fix It !">
 					  <span class="glyphicon glyphicon-zoom-in"></span>
 					</a>
-				  {% elif result[s][0] == 'ok' %}
+					<a class="btn btn-xs graph" href="{{switch}}/{{name}}.{{version}}.svg"
+					   data-toggle="tooltip"
+					   title="Explanation Graph">
+					  <span class="glyphicon glyphicon-picture"></span>
+					</a>
+				  {% elif result[switch][0] == 'ok' %}
 					<span style="color:green">
 					  <span class="glyphicon glyphicon-ok"></span>
 					</span>
@@ -46,7 +51,7 @@
 				{% else %}
 					<span class="glyphicon glyphicon-option-horizontal"
 						  data-toggle="tooltip"
-						  title="Version {{version}} is not available for OCaml {{s}}"></span>
+						  title="Version {{version}} is not available for OCaml {{switch}}"></span>
 				{% endif %}
 			  </td>
 			{% endfor %}
@@ -57,17 +62,17 @@
 	  </div>
 	</div>
 	<div class="tab-pane" id="details">
-	  {% for version, result in versions.iteritems() %}
-		{% for s in switches %}
-		  {% if result[s] is defined %}
-			{% if result[s][0] == 'broken' %}
-			  <div id="p{{version|replace(".","_")}}_{{s|replace(".","_")}}" class="collapse">
-				{% set (direct,indirect) = result[s][1] %}
-				{% set dc = result[s][2] %}
-				{% set dm = result[s][3] %}
-				{% set idc = result[s][4] %}
-				{% set idm = result[s][5] %}
-				{% set reasons = result[s][6] %}
+	  {% for version,result in versions.iteritems() %}
+		{% for switch in switches %}
+		  {% if result[switch] is defined %}
+			{% if result[switch][0] == 'broken' %}
+			  <div id="p{{version|replace(".","_")}}_{{switch|replace(".","_")}}" class="collapse">
+				{% set (direct,indirect) = result[switch][1] %}
+				{% set dc = result[switch][2] %}
+				{% set dm = result[switch][3] %}
+				{% set idc = result[switch][4] %}
+				{% set idm = result[switch][5] %}
+				{% set reasons = result[switch][6] %}
 				{% if dc|length > 0 or dm|length > 0 %}
 				<p>This package requires manual intervention because
 				   {% if dm|length > 0 %} some dependencies cannot be satisifed{% endif %}
@@ -94,14 +99,14 @@
 				</p>
 				{% endif %}
 				{% if idc|length > 0 or idm|length > 0 %}
-				  <p>This package cannot be use with OCaml {{s}} because package(s)
+				  <p>This package cannot be use with OCaml {{switch}} because package(s)
 					 {% for pkg,verlist in idm.iteritems() %}
 					 <a href="packages/{{pkg}}.html" class="package-backlink">{{ pkg }}</a> (versions :
 						{% for v in verlist %}
 						  <a href="packages/{{pkg}}.html" version="{{v|replace(".","_")}}" class="version-backlink">{{ v }}</a>
 						  {% if not loop.last %},{% endif %}
 						{% endfor %}
-					  )
+					  ).
 					 {% endfor %}
 					 <p><ul>
 					   {% for ((p1,v1),(p2,v2)) in idc %}
@@ -117,7 +122,7 @@
 					  <ol>
 					    <li>Contact the maintainer of the package(s) {{ idm.keys()|join(', ') }} or propose a patch.</li>
 					    <li>Change/Amend the dependencies of this package.</li>
-						<li>Declare this package not available for OCaml {{ s }}.</li>
+						<li>Declare this package not available for OCaml {{ switch }}.</li>
 					  </ol>
 				  </p>
 				{% endif %}
@@ -126,6 +131,9 @@
 		  {% endif %}
 		{% endfor %}
 	  {% endfor %}
+	</div>
+	<div class="tab-pane" id="graph">
+	  <div id="svgfile" class="collapse"></div>
 	</div>
   </div>
   

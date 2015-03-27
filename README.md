@@ -11,6 +11,12 @@ all available version of the OCaml compiler.
  * datatables ( https://datatables.net )
 - JS
  * jquery ( https://jquery.com/ )
+ * query svg plugin ( http://keith-wood.name/svg.html )
+- Python
+ * python-pydot
+ * python-yaml
+ * python-matplotlib
+ * python-jinja2
 
 ## How To Use ?
 

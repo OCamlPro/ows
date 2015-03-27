@@ -39,19 +39,23 @@ function distcheck {
   local commit=$2
   local author=$3
   local title=$4
+  local dirname=${REPORTDIR}/$(date --date "$date" +%Y-"%m-%d")/${commit}/
+
+  echo "Saving data in ${dirname}"
 
   for version in ${VERSIONS}; do
     ${OPAM} config pef-universe --switch ${version} > ${TMPDIR}/report-${version}.pef
     if [ -s ${TMPDIR}/report-${version}.pef ] ; then
-      local dirname=${REPORTDIR}/$(date --date "$date" +%Y-"%m-%d")/${commit}/
-      mkdir -p ${dirname}
+      mkdir -p ${dirname}/${version}
       echo "ocaml-switch: ${version}" > ${dirname}/report-${version}.yaml
       echo "git-date: ${date}" >> ${dirname}/report-${version}.yaml
       echo "git-commit: ${commit}" >> ${dirname}/report-${version}.yaml
       echo "git-author: \"${author}\"" >> ${dirname}/report-${version}.yaml
       echo "git-title: |" >> ${dirname}/report-${version}.yaml
       echo " ${title}" >> ${dirname}/report-${version}.yaml
-      ${DISTCHECK} pef://${TMPDIR}/report-${version}.pef -m --summary -e -s -f >> ${dirname}/report-${version}.yaml
+      ${DISTCHECK} --dot \
+        --outdir ${dirname}/${version} pef://${TMPDIR}/report-${version}.pef \
+        -m --summary -e -s -f >> ${dirname}/report-${version}.yaml
       mv ${TMPDIR}/report-${version}.pef ${dirname}/
       #gzip ${dirname}/report-${version}.yaml
       gzip -f ${dirname}/report-${version}.pef
@@ -85,7 +89,7 @@ function replay {
     currentdate=$2
   fi
 
-  git --git-dir ${OPAMREPO}/.git fetch
+  git --git-dir ${OPAMREPO}/.git fetch 2&> /dev/null
 
   # Creation of opam-repository
   local range=$(daterange ${origin} ${currentdate})
@@ -96,8 +100,8 @@ function replay {
       for commit in ${commits}; do
         (cd ${OPAMREPO} && \
         git reset ${commit} --hard && \
-        git clean -dxf )
-        ${OPAM} update --use-internal-solver 
+        git clean -dxf ) &2> /dev/null
+        ${OPAM} update --use-internal-solver 2&> /dev/null
         local date=$(git show -s --format=%ci ${commit})
         local author=$(git show -s --format=%an ${commit})
         local title=$(git show -s --format=%s ${commit})
@@ -203,6 +207,7 @@ shift "$((OPTIND-1))" # Shift off the options and optional --.
 
 if [ init = true ]; then
   if [ ! -d ${OPAMROOT} ]; then
+    echo "Init local Opam repository in ${OPAMROOT}"
     setup
   fi
 fi
@@ -214,9 +219,7 @@ from="2015-02-27"
 from=${1:-$(/bin/date --date "10 days ago" +%Y-%m-%d)}
 to=${2:-$(/bin/date +%Y-%m-%d)}
 
-echo "from $from"
-echo "to $to"
-echo $init
+echo "Updating Opam repository analysis from $from to $to"
 
 cd ${OPAMREPO} && replay $from $to
 

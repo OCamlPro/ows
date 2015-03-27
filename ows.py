@@ -21,6 +21,8 @@ import argparse
 import csv
 import datetime as dt
 
+import pydot
+
 import matplotlib.pyplot as plt
 from matplotlib import dates
 from matplotlib.dates import DateFormatter, date2num
@@ -244,6 +246,15 @@ def html_weather(options,aggregatereport,summaryreport,switches):
         output = template.render({'name' : name, 'versions' : versions, 'switches': switches, 'date' : summaryreport['date'], 'baseurl' : options['baseurl']})
         fname = os.path.join(options['dirname'],"packages",name+".html")
         save_page(output,fname)
+        if not options['nosvg'] :
+            for switch in switches :
+                for version,result in versions.iteritems() :
+                    if switch in result and result[switch][0] == 'broken' :
+                        dotname = os.path.join(options['reportdir'],switch,"%s.%s.dot" % (name,version))
+                        if os.path.exists(dotname) :
+                            print dotname
+                            dotfile = pydot.graph_from_dot_file(dotname)
+                            dotfile.write_svg(os.path.join(options['dirname'],switch,"%s.%s.svg" % (name,version)))
     template = j2_env.get_template('templates/weather.html')
     output = template.render({'summary' : summaryreport, 'switches': switches, 'baseurl' : options['baseurl']})
     fname = os.path.join(options['dirname'],"index.html")
@@ -290,7 +301,7 @@ def html_summary(options,summaryreport,switches):
     fname = os.path.join(options['dirname'],"summary.html")
     save_page(output,fname)
 
-def setup(summaryreport):
+def setup(summaryreport,switches):
     shortdate = summaryreport['date'].strftime("%Y-%m-%d")
     dirname = os.path.join("html",shortdate,summaryreport['commit'])
     if not os.path.exists(dirname) :
@@ -301,6 +312,10 @@ def setup(summaryreport):
     packages = os.path.join(dirname,'packages')
     if not os.path.exists(packages) :
         os.makedirs(packages)
+    for switch in switches :
+        switchname = os.path.join(dirname,switch)
+        if not os.path.exists(switchname) :
+            os.makedirs(switchname)
     return dirname
 
 def load_or_parse(reportdir,nocache):
@@ -363,7 +378,8 @@ def main():
     parser = argparse.ArgumentParser(description='create ows static pages')
     parser.add_argument('-v', '--verbose')
     parser.add_argument('-d', '--debug', action='store_true', default=False)
-    parser.add_argument('--nocache', action='store_true', default=False)
+    parser.add_argument('--nocache', action='store_true', help="Do not use cache files (if any)", default=False)
+    parser.add_argument('--nosvg', action='store_true', help="Do not generate svg files", default=False)
     parser.add_argument('--baseurl', type=str, help="base url", default="http://localhost:8000/")
     parser.add_argument('--history', type=str, help="history database", default=os.path.join("reports",'history.pickle'))
     parser.add_argument('reportdir', type=str, nargs=1, help="dataset")
@@ -373,7 +389,11 @@ def main():
     (switches,ar,sr) = load_or_parse(args.reportdir[0],args.nocache)
     print "baseurl: ", args.baseurl
     print "history: ",args.history
-    options = {'dirname' : setup(sr), 'baseurl' : args.baseurl }
+    options = {
+            'dirname' : setup(sr,switches),
+            'baseurl' : args.baseurl ,
+            'reportdir' : args.reportdir[0],
+            'nosvg' : args.nosvg}
 
     h = load_history(args.history,sr['date'])
     history = list(h.items())

@@ -28,6 +28,15 @@
 		  $(m).find(".collapse.in").collapse('hide');
 		  $(m).find(href).collapse('toggle');
 		});
+		$(this).find('.graph').click(function(e){
+		  e.preventDefault();
+		  var href = $(this).attr("href");
+		  $(m).find('#overview').tab().hide();
+		  $(m).find("#modal-tab a[href='#graph']").tab('show');
+		  $(m).find(".collapse.in").collapse('hide');
+      $(m).find('#svgfile').svg({loadURL: href});
+      $(m).find('#svgfile').collapse('toggle');
+		});
 		$(m).find('.package-backlink').click(function(e){
 		  e.preventDefault();
 		  var p = $(this).attr("href");
