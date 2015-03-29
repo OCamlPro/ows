@@ -142,7 +142,8 @@ def aggregate(d):
                                     dm.append(unsatdep)
                                 else :
                                     indirect = True
-                                    idm.setdefault(pkgname,[pkgvers]).append(pkgvers)
+                                    if pkgvers not in idm.setdefault(pkgname,[pkgvers]) :
+                                        idm.setdefault(pkgname,[pkgvers]).append(pkgvers)
 
                             if 'conflict' in p :
                                 p1 = p['conflict']['pkg1']['package']
@@ -232,10 +233,10 @@ def html_credits(options,summaryreport):
     fname = os.path.join(options['dirname'],"credits.html")
     save_page(output,fname)
  
-def html_howto(options,summaryreport):
+def html_howto(options,summaryreport,switches):
     print "Compiling Howto Page"
     template = j2_env.get_template('templates/howto.html')
-    output = template.render({'summary' : summaryreport, 'baseurl' : options['baseurl']})
+    output = template.render({'switches': switches, 'summary' : summaryreport, 'baseurl' : options['baseurl']})
     fname = os.path.join(options['dirname'],"howto.html")
     save_page(output,fname)
  
@@ -402,7 +403,7 @@ def main():
 
     html_weather(options,ar,sr,switches)
     html_summary(options,sr,switches)
-    html_howto(options,sr)
+    html_howto(options,sr,switches)
     html_credits(options,sr)
     html_backlog(options,history[today-10:today-1][::-1],sr)
     plot(options,history[:today],switches)

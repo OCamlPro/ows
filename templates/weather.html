@@ -2,7 +2,7 @@
 {% block title %}{% endblock %}
 {% block intro %}
 This service runs on regular intervals an evaluation of the solvability of
-dependencies in the official OPAM repository, for 4 stable releases of
+dependencies in the official OPAM repository, for {{switches|length}} stable releases of
 OCaml.
 {% endblock %}
 {% block content %}
@@ -15,10 +15,15 @@ OCaml.
 	{% for name,versions in summary['report'].iteritems() %}
 	  <tr>
 		<td>
-      <a id="#package{{name}}" data-toggle="modal" data-target="#myModal" data-remote="packages/{{name}}.html">{{name}}</a>
+      <a href="#package{{name}}" 
+         id="#package{{name}}"
+         data-toggle="modal"
+         data-target="#myModal"
+         data-remote="packages/{{name}}.html">{{name}}
+      </a>
       {% for w in summary['weather'][name] %}
         {% if w == "sunny" %}
-          <i class="wi wi-day-sunny"></i>
+          <i class="wi wi-sunny"></i>
         {% elif w == "cloudy" %}
           <i class="wi wi-cloudy"></i>
         {% else %}
@@ -53,10 +58,9 @@ OCaml.
 					data-toggle="tooltip"
 					title="This package cannot be used with OCaml {{s}}">
 				<span class="glyphicon glyphicon-fire"></span>
-				<span class="glyphicon glyphicon-fire"></span>
 			  </span>
 			{% elif summary['report'][name][s] == 'partial' %}
-			  <span style="color:red"
+			  <span style="color:orange"
 					data-toggle="tooltip"
 					title="Some versions of this package cannot be used with OCaml {{s}}">
 				<span class="glyphicon glyphicon-fire"></span>
