@@ -13,7 +13,15 @@ OCaml.
 	</thead>
 	<tbody>
 	{% for name,versions in summary['report'].iteritems() %}
-	  <tr>
+	  <tr
+      {#
+      {% if summary['report'][name]['status'] == 'broken' %}
+        style="background-color:rgba(255,0,0,0.3)"
+      {% elif summary['report'][name]['status'] == 'partial' %}
+        style="background-color:rgba(255, 0, 0, 0.25)"
+      {% endif %}
+      #}
+    >
 		<td>
       <a href="#package{{name}}" 
          id="#package{{name}}"

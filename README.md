@@ -4,6 +4,13 @@
 A service to analyse the state of the opam repository w.r.t.
 all available version of the OCaml compiler.
 
+OWS is distributed under the GNU AGPLv3 licence.
+ 
+Copyright 2015 Inria and OCamlPro
+ 
+Author(s) : Pietro Abate <pietro . abate @ pps . univ - paris - diderot . fr>
+
+
 ## Dependencies
 - CSS
  * bootstrap ( http://getbootstrap.com/css/ )
