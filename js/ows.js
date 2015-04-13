@@ -68,11 +68,17 @@
 		  "ordering": false,
 		  "paging": false,
 		} );
-		$('#summary-table').DataTable( {
+		$('#summary-table-missing').DataTable( {
 		  "ordering": false,
 		  "stateSave": true,
 		  "paging": false,
 		} );
+		$('#summary-table-conflicts').DataTable( {
+		  "ordering": false,
+		  "stateSave": true,
+		  "paging": false,
+		} );
+
 		if (window.location.hash)
 		  document.getElementById(window.location.hash).click();
 	} );

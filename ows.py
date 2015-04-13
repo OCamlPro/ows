@@ -406,9 +406,9 @@ def main():
     html_howto(options,sr,switches)
     html_credits(options,sr)
     html_backlog(options,history[today-10:today-1][::-1],sr)
+    save_history(args.history,h,sr,switches)
     plot(options,history[:today],switches)
 
-    save_history(args.history,h,sr,switches)
     print
 
 if __name__ == '__main__':

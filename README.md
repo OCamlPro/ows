@@ -6,7 +6,7 @@ all available version of the OCaml compiler.
 
 OWS is distributed under the GNU AGPLv3 licence.
  
-Copyright 2015 Inria and OCamlPro
+Copyright : 2015 Inria
  
 Author(s) : Pietro Abate <pietro . abate @ pps . univ - paris - diderot . fr>
 

@@ -29,17 +29,14 @@
 				{% if result[switch] is defined %}
 				  {% if result[switch][0] == 'broken' %}
 					<span style="color:red"
-						  data-toggle="tooltip"
 						  title="This package is unusable with OCaml {{switch}}">
 					  <span class="glyphicon glyphicon-remove"></span>
 					</span>
 					<a class="btn btn-xs reasons" href="#p{{version|replace(".","_")}}_{{switch|replace(".","_")}}"
-					   data-toggle="tooltip"
 					   title="Fix It !">
 					  <span class="glyphicon glyphicon-zoom-in"></span>
 					</a>
 					<a class="btn btn-xs graph" href="{{switch}}/{{name}}.{{version}}.svg"
-					   data-toggle="tooltip"
 					   title="Explanation Graph">
 					  <span class="glyphicon glyphicon-picture"></span>
 					</a>
@@ -50,7 +47,6 @@
 				  {% endif %}
 				{% else %}
 					<span class="glyphicon glyphicon-option-horizontal"
-						  data-toggle="tooltip"
 						  title="Version {{version}} is not available for OCaml {{switch}}"></span>
 				{% endif %}
 			  </td>

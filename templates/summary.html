@@ -3,45 +3,57 @@
 {% block intro %}
   This table provides a list of packages that are cause other packages
   to be not installable. For each tuple, package, version, and for each
-  repository we give the aggregate number of packages that are broken.
+  repository we give the aggregate number of packages that are broken. 
+  Root causes are further classified for <a href="#missing">missing</a>
+  or <a href="#conflicts">conflicts</a>.
 {% endblock %}
 
 {% block content %}
+
+<a id="missing"><h3>Missing</h3></a>
 <div class="container">
-  <table id="summary-table" class="table table-hover table-condensed">
+  <table id="summary-table-missing" class="table table-hover table-condensed">
 	<thead>
-    <tr><th>Package</th><th>total</th>{% for s in switches %}<th>{{s}}</th>{% endfor %}</tr>
+    <tr><th>Missing</th><th>total</th>{% for s in switches %}<th>{{s}}</th>{% endfor %}</tr>
 	</thead>
 	<tbody>
-  {% for (n,v),breaks in summary['summary']['missing'].iteritems() %}
-    <tr>
-      <td><a data-toggle="modal" data-target="#myModal" data-remote="summary/{{n}}{{v}}.html">{{n}} {{v}}</a></td>
-      <td>{{ breaks['total'] }}</td>
-    {% for s in switches %}
-      {% if breaks[s] is defined %}
-        <td>{{ breaks[s]['breaks'] }}</td>
-      {% else %}
-        <td>...</td>
-      {% endif %}
+    {% for (n,v),breaks in summary['summary']['missing'].iteritems() %}
+      <tr>
+        <td><a data-toggle="modal" data-target="#myModal" data-remote="summary/{{n}}{{v}}.html">{{n}} {{v}}</a></td>
+        <td>{{ breaks['total'] }}</td>
+      {% for s in switches %}
+        {% if breaks[s] is defined %}
+          <td>{{ breaks[s]['breaks'] }}</td>
+        {% else %}
+          <td>...</td>
+        {% endif %}
+      {% endfor %}
+      </tr>
     {% endfor %}
-    </tr>
-  {% endfor %}
-  {% for (pkg1,pkg2),breaks in summary['summary']['conflict'].iteritems() %}
-    <tr>
-      {% set n1,v1 = pkg1[0],pkg1[1] %}
-      {% set n2,v2 = pkg2[0],pkg2[1] %}
-      <td><a data-toggle="modal" data-target="#myModal" data-remote="summary/{{n1}}{{v1}}-{{n2}}{{v2}}.html">({{n1}} {{v1}}) # ({{n2}} {{v2}})</a></td>
-      <td>{{ breaks['total'] }}</td>
-    {% for s in switches %}
-      {% if breaks[s] is defined %}
-        <td>{{ breaks[s]['breaks'] }}</td>
-      {% else %}
-        <td>...</td>
-      {% endif %}
-    {% endfor %}
-    </tr>
-  {% endfor %}
+	</tbody>
+  </table>
 
+<a id="conflicts"><h3>Conflicts</h3></a>
+  <table id="summary-table-conflicts" class="table table-hover table-condensed">
+	<thead>
+    <tr><th>Conflicts</th><th>total</th>{% for s in switches %}<th>{{s}}</th>{% endfor %}</tr>
+	</thead>
+	<tbody>
+    {% for (pkg1,pkg2),breaks in summary['summary']['conflict'].iteritems() %}
+      <tr>
+        {% set n1,v1 = pkg1[0],pkg1[1] %}
+        {% set n2,v2 = pkg2[0],pkg2[1] %}
+        <td><a data-toggle="modal" data-target="#myModal" data-remote="summary/{{n1}}{{v1}}-{{n2}}{{v2}}.html">({{n1}} {{v1}}) x ({{n2}} {{v2}})</a></td>
+        <td>{{ breaks['total'] }}</td>
+      {% for s in switches %}
+        {% if breaks[s] is defined %}
+          <td>{{ breaks[s]['breaks'] }}</td>
+        {% else %}
+          <td>...</td>
+        {% endif %}
+      {% endfor %}
+      </tr>
+    {% endfor %}
 	</tbody>
   </table>
 </div>

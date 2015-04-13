@@ -21,7 +21,7 @@ function archive {
   latest=$(ls -d1 $dir/????-??-?? | sort -r | head -1)
   latest=$(basename $latest)/$(ls -1 ${latest})
   cd $dir 
-  ln -s ../$latest latest/day
+  ln -s ../$latest latest/today
 }
 
 # Usage info

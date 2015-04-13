@@ -89,7 +89,8 @@ function replay {
     currentdate=$2
   fi
 
-  git --git-dir ${OPAMREPO}/.git fetch 2&> /dev/null
+  git --git-dir ${OPAMREPO}/.git fetch origin 2&> /dev/null
+  git --git-dir ${OPAMREPO}/.git pull 2&> /dev/null
 
   # Creation of opam-repository
   local range=$(daterange ${origin} ${currentdate})

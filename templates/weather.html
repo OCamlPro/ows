@@ -1,4 +1,6 @@
 {% extends "templates/page.html" %}
+
+
 {% block title %}{% endblock %}
 {% block intro %}
 This service runs on regular intervals an evaluation of the solvability of
@@ -42,13 +44,11 @@ OCaml.
 		<td>
 			{% if summary['report'][name]['status'] == 'broken' %}
 			<span style="color:red"
-				  data-toggle="tooltip"
 				  title="This package is not usable with any compiler">
 				<span class="glyphicon glyphicon-thumbs-down"></span>
 			  </span>
 			{% elif summary['report'][name]['status'] == 'partial' %}
 			  <span style="color:red"
-					data-toggle="tooltip"
 					title="{{ summary['report'][name]['percent'] }}% of the total available versions of this package are not installable">
 				<span class="glyphicon glyphicon-warning-sign"></span>
 			  </span>
@@ -63,13 +63,11 @@ OCaml.
 		  {% if summary['report'][name][s] is defined %}
 			{% if summary['report'][name][s] == 'broken' %}
 			  <span style="color:red"
-					data-toggle="tooltip"
 					title="This package cannot be used with OCaml {{s}}">
 				<span class="glyphicon glyphicon-fire"></span>
 			  </span>
 			{% elif summary['report'][name][s] == 'partial' %}
 			  <span style="color:orange"
-					data-toggle="tooltip"
 					title="Some versions of this package cannot be used with OCaml {{s}}">
 				<span class="glyphicon glyphicon-fire"></span>
 			  </span>
@@ -80,7 +78,6 @@ OCaml.
 			{% endif %}
 		  {% else %}
 			  <span class="glyphicon glyphicon-option-horizontal"
-					data-toggle="tooltip"
 					title="This package is not available for OCaml {{s}}"></span>
 		  {% endif %}
 		  </td>

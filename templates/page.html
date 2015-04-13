@@ -13,7 +13,7 @@
   </head>
   <body>
 
-	  <nav class="navbar navbar-default" role="banner">
+	  <div class="navbar navbar-default" role="banner">
 		<div class="container">
 		  <div class="navbar-header">
 			<button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".navbar-collapse">
@@ -22,19 +22,22 @@
 			  <span class="icon-bar"></span>
 			  <span class="icon-bar"></span>
 			</button>
-			<a href="{{baseurl}}/latest/day/index.html" class="navbar-brand">OWS</a>
+			<a href="{{baseurl}}/latest/day/index.html" class="navbar-brand" title="Most Recent OWS Report">OWS</a>
 		  </div>
-		  <nav class="collapse navbar-collapse" role="navigation">
+		  <div class="collapse navbar-collapse" role="navigation">
 			<ul class="nav navbar-nav">
-			  <li><a href="index.html">Weather</a></li>
-			  <li><a href="summary.html">Summary</a></li>
-			  <li><a href="backlog.html">Backlog</a></li>
-			  <li><a href="howto.html">HowTo</a></li>
-			  <li><a href="credits.html">Credits</a></li>
+			  <li><a href="index.html" title="Opam Repository Status Overview">Weather</a></li>
+			  <li><a href="summary.html" title="Summary of the Most Offending Broken Packages">Summary</a></li>
+			  <li><a href="backlog.html" title="OWS Reports' Archive">Backlog</a></li>
+			  <li><a href="howto.html" title="OWS Documentation">Documentation</a></li>
+			  <li><a href="credits.html" title="About US">Credits</a></li>
+			  <li><a href="http://www.inria.fr/"><img style="height: 50px;" src="{{baseurl}}/images/logo_INRIA.png"/></a></li>
+			  <li><a href="http://www.irill.org"><img style="height: 50px;" src="{{baseurl}}/images/logo_IRILL.png"/></a></li>
+			  <li><a href="http://ocamlpro.com"><img style="background:grey; height: 50px;" src="{{baseurl}}/images/logo_OCAMLPRO.png"/></a></li>
 			</ul>
-		  </nav>
+		  </div>
 		</div>
-	  </nav>
+	  </div>
 
 	  <div class="container">
 		  <div class="row">
