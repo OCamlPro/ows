@@ -48,21 +48,29 @@ function distcheck {
   echo "Saving data in ${dirname}"
 
   for version in ${VERSIONS}; do
-    ${OPAM} config pef-universe ${OPAMOPTIONS} --switch ${version} > ${TMPDIR}/report-${version}.pef
+
+    if [ ! -s ${dirname}/report-${version}.pef.gz ]; then
+      ${OPAM} config pef-universe ${OPAMOPTIONS} --switch ${version} > ${TMPDIR}/report-${version}.pef
+    else
+      zcat ${dirname}/report-${version}.pef.gz > ${TMPDIR}/report-${version}.pef
+    fi
+
     if [ -s ${TMPDIR}/report-${version}.pef ] ; then
-      mkdir -p ${dirname}/${version}
-      echo "ocaml-switch: ${version}" > ${dirname}/report-${version}.yaml
-      echo "git-date: ${date}" >> ${dirname}/report-${version}.yaml
-      echo "git-commit: ${commit}" >> ${dirname}/report-${version}.yaml
-      echo "git-author: \"${author}\"" >> ${dirname}/report-${version}.yaml
-      echo "git-title: |" >> ${dirname}/report-${version}.yaml
-      echo " ${title}" >> ${dirname}/report-${version}.yaml
-      ${DISTCHECK} --dot \
-        --outdir ${dirname}/${version} pef://${TMPDIR}/report-${version}.pef \
-        -m --summary -e -s -f >> ${dirname}/report-${version}.yaml
-      mv ${TMPDIR}/report-${version}.pef ${dirname}/
-      #gzip ${dirname}/report-${version}.yaml
-      gzip -f ${dirname}/report-${version}.pef
+      if [ ! -s ${dirname}/report-${version}.yaml ]; then
+        mkdir -p ${dirname}/${version}
+        echo "ocaml-switch: ${version}" > ${dirname}/report-${version}.yaml
+        echo "git-date: ${date}" >> ${dirname}/report-${version}.yaml
+        echo "git-commit: ${commit}" >> ${dirname}/report-${version}.yaml
+        echo "git-author: \"${author}\"" >> ${dirname}/report-${version}.yaml
+        echo "git-title: |" >> ${dirname}/report-${version}.yaml
+        echo " ${title}" >> ${dirname}/report-${version}.yaml
+        ${DISTCHECK} --dot \
+          --outdir ${dirname}/${version} pef://${TMPDIR}/report-${version}.pef \
+          -m --summary -e -s -f >> ${dirname}/report-${version}.yaml
+        mv ${TMPDIR}/report-${version}.pef ${dirname}/
+        #gzip ${dirname}/report-${version}.yaml
+        gzip -f ${dirname}/report-${version}.pef
+      fi
     else
       rm ${TMPDIR}/report-${version}.pef
     fi
