@@ -1,0 +1,19 @@
+BASEDIR=~/Projects/repos/ows
+
+# Ocaml Releases (add here a new one)
+VERSIONS="3.12.1 4.00.1 4.01.0 4.02.0 4.02.1"
+
+# distcheck binary
+DISTCHECK=~/Projects/repos/mancoosi-tools/dose/dose-distcheck
+
+# opam binary
+OPAM=~/Projects/repos/opam/src/opam
+OPAMOPTIONS="--quiet --use-internal-solver"
+
+# distcheck output
+REPORTDIR=${BASEDIR}/reports
+
+# OWS opam repository
+DATADIR=${BASEDIR}/repository
+
+TMPDIR=/tmp

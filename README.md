@@ -27,19 +27,11 @@ Author(s) : Pietro Abate <pietro . abate @ pps . univ - paris - diderot . fr>
 
 ## Setup
 
-  Modify all relevant variables in ''ows-update'' to match your environment
+Modify all relevant variables in ''ows.config-default'' to match your environment
   
-  BASEDIR=~/Projects/repos/ows
-  VERSIONS=${VERSIONS:-"3.12.1 4.00.1 4.01.0 4.02.0 4.02.1"}
-  DISTCHECK=~/Projects/repos/mancoosi-tools/dose/dose-distcheck
-  OPAM=~/Projects/repos/opam/src/opam
-  REPORTDIR=${BASEDIR}/reports
-  DATADIR=${BASEDIR}/repository
-  TMPDIR=/tmp
+Run ''ows-update -s'' to checkout the opam repository and configure it for ows
 
-  run ''ows-update -s'' to checkout the opam repository and configure it for ows
-
-  copy the directories ''css fonts images js'' to the target html directory
+Copy the directories ''css fonts images js'' to the target html directory
 
 ## How To Use ?
 

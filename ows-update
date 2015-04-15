@@ -3,14 +3,16 @@
 #set -x
 
 #################### Config Variables ########################
-BASEDIR=~/Projects/repos/ows
-VERSIONS=${VERSIONS:-"3.12.1 4.00.1 4.01.0 4.02.0 4.02.1"}
-DISTCHECK=~/Projects/repos/mancoosi-tools/dose/dose-distcheck
-OPAM=~/Projects/repos/opam/src/opam
-OPAMOPTIONS="--quiet --use-internal-solver"
-REPORTDIR=${BASEDIR}/reports
-DATADIR=${BASEDIR}/repository
-TMPDIR=/tmp
+DEFAULTS=${DEFAULTS:-"/etc/default/ows"}
+
+# Exit if the package is not installed
+if [ -x "$DEFAULTS" ]; then
+  echo "OWS not fully configured. Check $DEFAULTS"
+  exit 0
+fi
+
+# Read configuration variable file if it is present
+[ -r $DEFAULTS ] && . $DEFAULTS
 
 ######################################################################
 
