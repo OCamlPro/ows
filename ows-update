@@ -44,7 +44,7 @@ function distcheck {
   echo "Saving data in ${dirname}"
 
   for version in ${VERSIONS}; do
-    ${OPAM} config pef-universe --switch ${version} > ${TMPDIR}/report-${version}.pef
+    ${OPAM} config pef-universe --use-internal-solver --switch ${version} > ${TMPDIR}/report-${version}.pef
     if [ -s ${TMPDIR}/report-${version}.pef ] ; then
       mkdir -p ${dirname}/${version}
       echo "ocaml-switch: ${version}" > ${dirname}/report-${version}.yaml
@@ -138,22 +138,18 @@ EOF
 
   ## Initialize OPAM
 
-  if [ -d "${OPAMROOT}" ]; then
-    echo "Error: Pre-existent OPAMROOT = ${OPAMROOT}"
-  else 
-    yes no | ${OPAM} init --comp=${VERSIONS##* } opam_compilers ${OPAMCOMP}
-    ${OPAM} remote add --use-internal-solver -p 0 opam_repository ${OPAMREPO}
+  yes no | ${OPAM} init --use-internal-solver --comp=${VERSIONS##* } opam_compilers ${OPAMCOMP}
+  ${OPAM} remote add --use-internal-solver -p 0 opam_repository ${OPAMREPO}
 
-    ## Small hack for opam to prefers the "faked' compilers
+  ## Small hack for opam to prefers the "faked' compilers
 
-    ${OPAM} remote remove opam_compilers
-    ${OPAM} remote add --use-internal-solver -p 20 opam_compilers ${OPAMCOMP}
-    ${OPAM} update --use-internal-solver
+  ${OPAM} remote remove --use-internal-solver opam_compilers
+  ${OPAM} remote add --use-internal-solver -p 20 opam_compilers ${OPAMCOMP}
+  ${OPAM} update --use-internal-solver
 
-    for version in ${VERSIONS}; do
-      ${OPAM} switch --use-internal-solver ${version}
-    done
-  fi
+  for version in ${VERSIONS}; do
+    ${OPAM} switch --use-internal-solver ${version}
+  done
 }
 
 function html {
@@ -188,7 +184,7 @@ verbose=0
 init=false
 
 OPTIND=1
-while getopts "hvs:" opt; do
+while getopts "hvs" opt; do
     case "$opt" in
         h)
             show_help
@@ -206,9 +202,9 @@ while getopts "hvs:" opt; do
 done
 shift "$((OPTIND-1))" # Shift off the options and optional --.
 
-if [ init = true ]; then
+if [ $init = 1 ]; then
+  echo "Init local Opam repository in ${OPAMROOT}"
   if [ ! -d ${OPAMROOT} ]; then
-    echo "Init local Opam repository in ${OPAMROOT}"
     setup
   fi
 fi

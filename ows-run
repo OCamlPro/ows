@@ -302,9 +302,9 @@ def html_summary(options,summaryreport,switches):
     fname = os.path.join(options['dirname'],"summary.html")
     save_page(output,fname)
 
-def setup(summaryreport,switches):
+def setup(summaryreport,switches,targetdir):
     shortdate = summaryreport['date'].strftime("%Y-%m-%d")
-    dirname = os.path.join("html",shortdate,summaryreport['commit'])
+    dirname = os.path.join(targetdir,shortdate,summaryreport['commit'])
     if not os.path.exists(dirname) :
         os.makedirs(dirname)
     summary = os.path.join(dirname,'summary')
@@ -382,16 +382,18 @@ def main():
     parser.add_argument('--nocache', action='store_true', help="Do not use cache files (if any)", default=False)
     parser.add_argument('--nosvg', action='store_true', help="Do not generate svg files", default=False)
     parser.add_argument('--baseurl', type=str, help="base url", default="http://localhost:8000/")
+    parser.add_argument('--targetdir', type=str, help="target html directory", default="html")
     parser.add_argument('--history', type=str, help="history database", default=os.path.join("reports",'history.pickle'))
     parser.add_argument('reportdir', type=str, nargs=1, help="dataset")
     args = parser.parse_args()
 
     print "Considering ", args.reportdir[0]
+    print "Targer directory ", args.targetdir
     (switches,ar,sr) = load_or_parse(args.reportdir[0],args.nocache)
     print "baseurl: ", args.baseurl
     print "history: ",args.history
     options = {
-            'dirname' : setup(sr,switches),
+            'dirname' : setup(sr,switches,args.targetdir),
             'baseurl' : args.baseurl ,
             'reportdir' : args.reportdir[0],
             'nosvg' : args.nosvg}

@@ -25,6 +25,22 @@ Author(s) : Pietro Abate <pietro . abate @ pps . univ - paris - diderot . fr>
  * python-matplotlib
  * python-jinja2
 
+## Setup
+
+  Modify all relevant variables in ''ows-update'' to match your environment
+  
+  BASEDIR=~/Projects/repos/ows
+  VERSIONS=${VERSIONS:-"3.12.1 4.00.1 4.01.0 4.02.0 4.02.1"}
+  DISTCHECK=~/Projects/repos/mancoosi-tools/dose/dose-distcheck
+  OPAM=~/Projects/repos/opam/src/opam
+  REPORTDIR=${BASEDIR}/reports
+  DATADIR=${BASEDIR}/repository
+  TMPDIR=/tmp
+
+  run ''ows-update -s'' to checkout the opam repository and configure it for ows
+
+  copy the directories ''css fonts images js'' to the target html directory
+
 ## How To Use ?
 
 ''ows-update'' initializes a local opam repository and keeps it up-to-date.
@@ -34,14 +50,15 @@ root directory. Ex :
 
     ows-update 2015-03-12 2015-03-13
 
-''ows.py'' takes a local directory containing the distcheck results and
+''ows-run'' takes a local directory containing the distcheck results and
 aggregates and build one ows report. Usually ows.py is run in a for cycle :
 
     for i in reports/2015-03-2*/* ; do 
-      ./ows.py --baseurl "http://ows.irill.org" $i; 
+      ./ows-run --baseurl "http://ows.irill.org" $i; 
     done
 
 ''ows-archive'' takes care of archiving all html reports older then 10 days.
 it can be run from a cron script. Ex :
 
     ./ows-archive html 11
+
