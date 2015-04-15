@@ -7,6 +7,7 @@ BASEDIR=~/Projects/repos/ows
 VERSIONS=${VERSIONS:-"3.12.1 4.00.1 4.01.0 4.02.0 4.02.1"}
 DISTCHECK=~/Projects/repos/mancoosi-tools/dose/dose-distcheck
 OPAM=~/Projects/repos/opam/src/opam
+OPAMOPTIONS="--quiet --use-internal-solver"
 REPORTDIR=${BASEDIR}/reports
 DATADIR=${BASEDIR}/repository
 TMPDIR=/tmp
@@ -18,6 +19,7 @@ OPAMREPO=${DATADIR}/opam-repository
 OPAMCOMP=${DATADIR}/opam-compilers
 
 export OPAMROOT
+export LANG=en_US
 ######################################################################
 
 function daterange {
@@ -44,7 +46,7 @@ function distcheck {
   echo "Saving data in ${dirname}"
 
   for version in ${VERSIONS}; do
-    ${OPAM} config pef-universe --use-internal-solver --switch ${version} > ${TMPDIR}/report-${version}.pef
+    ${OPAM} config pef-universe --switch ${version} > ${TMPDIR}/report-${version}.pef
     if [ -s ${TMPDIR}/report-${version}.pef ] ; then
       mkdir -p ${dirname}/${version}
       echo "ocaml-switch: ${version}" > ${dirname}/report-${version}.yaml
@@ -102,7 +104,7 @@ function replay {
         (cd ${OPAMREPO} && \
         git reset ${commit} --hard && \
         git clean -dxf ) &2> /dev/null
-        ${OPAM} update --use-internal-solver 2&> /dev/null
+        ${OPAM} update ${OPAMOPTIONS} 2&> /dev/null
         local date=$(git show -s --format=%ci ${commit})
         local author=$(git show -s --format=%an ${commit})
         local title=$(git show -s --format=%s ${commit})
@@ -138,17 +140,17 @@ EOF
 
   ## Initialize OPAM
 
-  yes no | ${OPAM} init --use-internal-solver --comp=${VERSIONS##* } opam_compilers ${OPAMCOMP}
-  ${OPAM} remote add --use-internal-solver -p 0 opam_repository ${OPAMREPO}
+  yes no | ${OPAM} init ${OPAMOPTIONS} --comp=${VERSIONS##* } opam_compilers ${OPAMCOMP}
+  ${OPAM} remote add ${OPAMOPTIONS} -p 0 opam_repository ${OPAMREPO}
 
   ## Small hack for opam to prefers the "faked' compilers
 
-  ${OPAM} remote remove --use-internal-solver opam_compilers
-  ${OPAM} remote add --use-internal-solver -p 20 opam_compilers ${OPAMCOMP}
-  ${OPAM} update --use-internal-solver
+  ${OPAM} remote ${OPAMOPTIONS} remove opam_compilers
+  ${OPAM} remote ${OPAMOPTIONS} add -p 20 opam_compilers ${OPAMCOMP}
+  ${OPAM} update ${OPAMOPTIONS}
 
   for version in ${VERSIONS}; do
-    ${OPAM} switch --use-internal-solver ${version}
+    ${OPAM} switch ${OPAMOPTIONS} ${version}
   done
 }
 
