@@ -1,0 +1,10 @@
+[Unit]
+Description=Opam ows service
+After=network.target
+
+[Timer]
+OnBootSec=15min
+OnUnitActiveSec=1w
+
+[Install]
+WantedBy=multi-user.target

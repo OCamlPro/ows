@@ -48,7 +48,7 @@ function distcheck {
   echo "Saving data in ${dirname}"
 
   for version in ${VERSIONS}; do
-    ${OPAM} config pef-universe --switch ${version} > ${TMPDIR}/report-${version}.pef
+    ${OPAM} config pef-universe ${OPAMOPTIONS} --switch ${version} > ${TMPDIR}/report-${version}.pef
     if [ -s ${TMPDIR}/report-${version}.pef ] ; then
       mkdir -p ${dirname}/${version}
       echo "ocaml-switch: ${version}" > ${dirname}/report-${version}.yaml
@@ -75,10 +75,15 @@ function distcheck {
 function rewind_git {
   local commits=""
   local oneday=$(date --date "$1 +1 day")
+  local limit="-n 1"
+  if [ $2 = 1 ]; then
+    limit=
+  fi
+
   if [ ! -z "$1" ]; then
-    commits=$(git rev-list -n 1 --since="$1" --until="$oneday" origin/master)
+    commits=$(git rev-list $limit --since="$1" --until="$oneday" origin/master)
   else
-    commits=$(git rev-list -n 1 origin/master)
+    commits=$(git rev-list $limit origin/master)
   fi
   echo "${commits}"
 }
@@ -92,15 +97,16 @@ function replay {
   if [ ! -z $2 ]; then
     currentdate=$2
   fi
+  local limit=$3
 
-  git --git-dir ${OPAMREPO}/.git fetch origin 2&> /dev/null
-  git --git-dir ${OPAMREPO}/.git pull -a
+  git --git-dir ${OPAMREPO}/.git fetch origin &> /dev/null
+  git --git-dir ${OPAMREPO}/.git pull -a &> /dev/null
 
   # Creation of opam-repository
   local range=$(daterange ${origin} ${currentdate})
 
   for date in $range; do
-      local commits=$(rewind_git "$date")
+      local commits=$(rewind_git "$date" "$limit")
       echo "replay $date"
       for commit in ${commits}; do
         (cd ${OPAMREPO} && \
@@ -172,6 +178,8 @@ Bootstrap and update opam repositories for OWS.
     -s          setup the a local opam repository
     -v          verbose mode. Can be used multiple times for increased
                 verbosity.
+    -t          get the last commits for today
+    -a          consider all commits (only the most recent is considered by default)
 
 FROM and TO define the interval to consider. Bu default TO is set to the
 current date and FROM is 10 days ago. Opam opened their from shop the 2012-05-19.
@@ -185,10 +193,12 @@ EOF
 from=""
 to=""
 verbose=0
-init=false
+init=0
+today=0
+limit=0
 
 OPTIND=1
-while getopts "hvs" opt; do
+while getopts "hvsta" opt; do
     case "$opt" in
         h)
             show_help
@@ -197,6 +207,10 @@ while getopts "hvs" opt; do
         v)  verbose=$((verbose+1))
             ;;
         s)  init=1
+            ;;
+        t)  today=1
+            ;;
+        a)  limit=1
             ;;
         '?')
             show_help >&2
@@ -217,11 +231,15 @@ from="2012-05-19"
 #from="2012-08-24"
 #to="2012-10-19"
 from="2015-02-27"
-from=${1:-$(/bin/date --date "10 days ago" +%Y-%m-%d)}
+if [ $today = 1 ]; then
+  from=$(/bin/date --date "1 days ago" +%Y-%m-%d)
+else
+  from=${1:-$(/bin/date --date "10 days ago" +%Y-%m-%d)}
+fi
 to=${2:-$(/bin/date +%Y-%m-%d)}
 
 echo "Updating Opam repository analysis from $from to $to"
 
-cd ${OPAMREPO} && replay $from $to
+cd ${OPAMREPO} && replay $from $to $limit
 
 

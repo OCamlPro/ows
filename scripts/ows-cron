@@ -1,0 +1,16 @@
+#!/bin/bash
+
+DEFAULTS=${DEFAULTS:-"/etc/default/ows"}
+
+# Exit if the package is not installed
+if [ -x "$DEFAULTS" ]; then
+  echo "OWS not fully configured. Check $DEFAULTS"
+  exit 0
+fi
+
+# Read configuration variable file if it is present
+[ -r $DEFAULTS ] && . $DEFAULTS
+
+${BASEDIR}/ows-update -a -t
+${BASEDIR}/ows-run --targetdir ${TARGETDIR} ${REPORTDIR}/$(/bin/date +%Y-%m-%d)/*
+${BASEDIR}/ows-archive ${TARGETDIR}

@@ -17,3 +17,5 @@ REPORTDIR=${BASEDIR}/reports
 DATADIR=${BASEDIR}/repository
 
 TMPDIR=/tmp
+
+TARGETDIR=${BASEDIR}/html

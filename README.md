@@ -33,6 +33,9 @@ Run ''ows-update -s'' to checkout the opam repository and configure it for ows
 
 Copy the directories ''css fonts images js'' to the target html directory
 
+The directory scripts contains ''ows-cron'' that can be schedule to run at 
+regular intervals
+
 ## How To Use ?
 
 ''ows-update'' initializes a local opam repository and keeps it up-to-date.

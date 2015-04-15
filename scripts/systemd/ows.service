@@ -1,0 +1,12 @@
+[Unit]
+Description=Opam ows service
+After=network.target
+
+[Service]
+User=ows
+Group=ows
+Environment="DEFAULTS=/etc/default/ows2"
+ExecStart=/nas/cudf-services/src/ows/ows-cron
+
+[Install]
+WantedBy=multi-user.target
