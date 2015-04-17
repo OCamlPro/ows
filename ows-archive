@@ -1,5 +1,20 @@
 #!/bin/bash
 
+trap 'echo you hit Ctrl-C/Ctrl-\, now exiting..; exit' SIGINT SIGQUIT
+
+#################### Config Variables ########################
+DEFAULTS=${DEFAULTS:-"/etc/default/ows"}
+
+if [ -x "$DEFAULTS" ]; then
+  echo "OWS not fully configured. Check $DEFAULTS"
+  exit 0
+fi
+
+# Read configuration variable file if it is present
+[ -r $DEFAULTS ] && . $DEFAULTS
+
+######################################################################
+
 function archive {
   local age=$(date --date="-$1 days" '+%s')
   local dir=$2
@@ -19,8 +34,10 @@ function archive {
   rm -Rf $dir/latest
   mkdir -p $dir/latest
   latest=$(ls -d1 $dir/????-??-?? | sort -r | head -1)
-  latest=$(basename $latest)/$(ls -1 ${latest})
-  cd $dir 
+  # XXX this is not actually the latest commit ... just the one on top according to ls
+  latest=$(basename $latest)/$(ls -1 ${latest} | head -1)
+  latest=$(cat $(basename $REPORTDIR)/$latest/commits | head -1)
+  cd $dir
   ln -s ../$latest latest/today
 }
 
@@ -60,12 +77,7 @@ while getopts "ha:" opt; do
 done
 shift "$((OPTIND-1))" # Shift off the options and optional --.
 
-if [ ! $# -eq 1 ]
-  then
-    echo "Report directory not supplied"
-fi
-
-dir=$1
+dir=${TARGETDIR}
 age=${age:-"11"}
 
 if [ -d $dir ]; then

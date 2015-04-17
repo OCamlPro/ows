@@ -1,5 +1,8 @@
 #!/bin/bash
 
+trap 'echo you hit Ctrl-C/Ctrl-\, now exiting..; exit' SIGINT SIGQUIT
+
+#################### Config Variables ########################
 DEFAULTS=${DEFAULTS:-"/etc/default/ows"}
 
 # Exit if the package is not installed
@@ -11,6 +14,16 @@ fi
 # Read configuration variable file if it is present
 [ -r $DEFAULTS ] && . $DEFAULTS
 
-${BASEDIR}/ows-update -a -t
-${BASEDIR}/ows-run --targetdir ${TARGETDIR} ${REPORTDIR}/$(/bin/date +%Y-%m-%d)/*
+######################################################################
+
+${BASEDIR}/ows-update -t
+
+for i in `ls -d ${REPORTDIR}/$(/bin/date +%Y-%m-)*/*`; do
+  if [ -d $i ]; then
+    ${BASEDIR}/ows-run --targetdir ${TARGETDIR} --baseurl ${BASEURL} --nosvg --nocache $i
+  else
+    echo "Empty $i"
+  fi
+done
+
 ${BASEDIR}/ows-archive ${TARGETDIR}

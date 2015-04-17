@@ -18,4 +18,8 @@ DATADIR=${BASEDIR}/repository
 
 TMPDIR=/tmp
 
+# target for static html files
 TARGETDIR=${BASEDIR}/html
+
+# the base user for the server
+BASEURL=http://localhost:8080

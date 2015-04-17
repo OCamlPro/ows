@@ -23,6 +23,8 @@ import datetime as dt
 
 import pydot
 
+import matplotlib
+matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
 from matplotlib import dates
 from matplotlib.dates import DateFormatter, date2num
@@ -68,6 +70,7 @@ def plot(options,history,switches):
     output = os.path.join(options['dirname'],"plot.png")
     fig = plt.figure()
     graph = fig.add_subplot(111)
+    history = filter(all(s in x[s] for x,s in zip([x[1]['summary']['totals'] for x in history if 'summary' in x[1]], switches)),history)
     h = [x[1]['summary']['totals'] for x in history if 'summary' in x[1]]
     ds = [date2num(x[0]) for x in history if 'summary' in x[1]]
     for s in switches :
@@ -242,6 +245,7 @@ def html_howto(options,summaryreport,switches):
  
 def html_weather(options,aggregatereport,summaryreport,switches):
     print "Compiling Weather Page"
+    print "Compiling SVG files..."
     for name,versions in aggregatereport.iteritems() :
         template = j2_env.get_template('templates/package.html')
         output = template.render({'name' : name, 'versions' : versions, 'switches': switches, 'date' : summaryreport['date'], 'baseurl' : options['baseurl']})
@@ -253,7 +257,6 @@ def html_weather(options,aggregatereport,summaryreport,switches):
                     if switch in result and result[switch][0] == 'broken' :
                         dotname = os.path.join(options['reportdir'],switch,"%s.%s.dot" % (name,version))
                         if os.path.exists(dotname) :
-                            print dotname
                             dotfile = pydot.graph_from_dot_file(dotname)
                             dotfile.write_svg(os.path.join(options['dirname'],switch,"%s.%s.svg" % (name,version)))
     template = j2_env.get_template('templates/weather.html')
@@ -377,8 +380,8 @@ def save_history(history,h,sr,switches):
 
 def main():
     parser = argparse.ArgumentParser(description='create ows static pages')
-    parser.add_argument('-v', '--verbose')
-    parser.add_argument('-d', '--debug', action='store_true', default=False)
+    #parser.add_argument('-v', '--verbose')
+    #parser.add_argument('-d', '--debug', action='store_true', default=False)
     parser.add_argument('--nocache', action='store_true', help="Do not use cache files (if any)", default=False)
     parser.add_argument('--nosvg', action='store_true', help="Do not generate svg files", default=False)
     parser.add_argument('--baseurl', type=str, help="base url", default="http://localhost:8000/")
@@ -388,10 +391,7 @@ def main():
     args = parser.parse_args()
 
     print "Considering ", args.reportdir[0]
-    print "Targer directory ", args.targetdir
     (switches,ar,sr) = load_or_parse(args.reportdir[0],args.nocache)
-    print "baseurl: ", args.baseurl
-    print "history: ",args.history
     options = {
             'dirname' : setup(sr,switches,args.targetdir),
             'baseurl' : args.baseurl ,

@@ -2,6 +2,8 @@
 
 #set -x
 
+trap 'echo you hit Ctrl-C/Ctrl-\, now exiting..; exit' SIGINT SIGQUIT
+
 #################### Config Variables ########################
 DEFAULTS=${DEFAULTS:-"/etc/default/ows"}
 
@@ -39,24 +41,32 @@ function daterange {
 
 function distcheck {
 
+  local runopam=0
   local date=$(date --date "$1")
   local commit=$2
   local author=$3
   local title=$4
-  local dirname=${REPORTDIR}/$(date --date "$date" +%Y-"%m-%d")/${commit}/
+  local force=$5
+  local dirname=${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)/${commit}/
 
+  echo "Commit $date"
   echo "Saving data in ${dirname}"
+  mkdir -p ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)
+  echo "${commit}" >> ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)/commits
 
   for version in ${VERSIONS}; do
 
-    if [ ! -s ${dirname}/report-${version}.pef.gz ]; then
+    if [ ! -s ${dirname}/report-${version}.pef.gz ] || [ $force == 1 ]; then
+      echo "Run opam config pef-universe"
       ${OPAM} config pef-universe ${OPAMOPTIONS} --switch ${version} > ${TMPDIR}/report-${version}.pef
+      runopam=1
     else
       zcat ${dirname}/report-${version}.pef.gz > ${TMPDIR}/report-${version}.pef
     fi
 
-    if [ -s ${TMPDIR}/report-${version}.pef ] ; then
-      if [ ! -s ${dirname}/report-${version}.yaml ]; then
+    if [ -s ${TMPDIR}/report-${version}.pef ]; then
+      if [ ! -s ${dirname}/report-${version}.yaml ] || [ $runopam == 1 ]; then
+        runopam=0 #reset flag
         mkdir -p ${dirname}/${version}
         echo "ocaml-switch: ${version}" > ${dirname}/report-${version}.yaml
         echo "git-date: ${date}" >> ${dirname}/report-${version}.yaml
@@ -64,6 +74,7 @@ function distcheck {
         echo "git-author: \"${author}\"" >> ${dirname}/report-${version}.yaml
         echo "git-title: |" >> ${dirname}/report-${version}.yaml
         echo " ${title}" >> ${dirname}/report-${version}.yaml
+        echo "Running distcheck"
         ${DISTCHECK} --dot \
           --outdir ${dirname}/${version} pef://${TMPDIR}/report-${version}.pef \
           -m --summary -e -s -f >> ${dirname}/report-${version}.yaml
@@ -88,8 +99,9 @@ function rewind_git {
     limit=
   fi
 
+  rm -f .git/index.lock
   if [ ! -z "$1" ]; then
-    commits=$(git rev-list $limit --since="$1" --until="$oneday" origin/master)
+    commits=$(git rev-list $limit --since="$1 1am" --until="$oneday" origin/master)
   else
     commits=$(git rev-list $limit origin/master)
   fi
@@ -106,9 +118,11 @@ function replay {
     currentdate=$2
   fi
   local limit=$3
+  local force=$4
 
-  git --git-dir ${OPAMREPO}/.git fetch origin &> /dev/null
-  git --git-dir ${OPAMREPO}/.git pull -a &> /dev/null
+  #git --git-dir ${OPAMREPO}/.git fetch origin &> /dev/null
+  git --git-dir ${OPAMREPO}/.git checkout master &> /dev/null
+  #git --git-dir ${OPAMREPO}/.git pull -a
 
   # Creation of opam-repository
   local range=$(daterange ${origin} ${currentdate})
@@ -116,15 +130,23 @@ function replay {
   for date in $range; do
       local commits=$(rewind_git "$date" "$limit")
       echo "replay $date"
+      echo "${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)/commits"
+      if [ ! -d ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d) ]; then
+        mkdir -p ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)
+      fi
+      if [ -f ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)/commits ]; then
+        rm -f ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)/commits
+      fi
       for commit in ${commits}; do
+        echo "${commit}" >> ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)/commits
         (cd ${OPAMREPO} && \
         git reset ${commit} --hard && \
-        git clean -dxf ) &2> /dev/null
-        ${OPAM} update ${OPAMOPTIONS} 2&> /dev/null
+        git clean -dxf ) &> /dev/null
+        ${OPAM} update ${OPAMOPTIONS} &> /dev/null
         local date=$(git show -s --format=%ci ${commit})
         local author=$(git show -s --format=%an ${commit})
         local title=$(git show -s --format=%s ${commit})
-        distcheck "$date" "$commit" "$author" "$title"
+        distcheck "$date" "$commit" "$author" "$title" $force
       done
   done
 }
@@ -171,7 +193,8 @@ EOF
 }
 
 function html {
-  cp -a js css fonts static/* html/ 
+  mkdir -f $TARGETDIR
+  cp -a js css fonts static/* $TARGETDIR
 }
 
 ##########################
@@ -204,9 +227,10 @@ verbose=0
 init=0
 today=0
 limit=0
+force=0
 
 OPTIND=1
-while getopts "hvsta" opt; do
+while getopts "hvstaf" opt; do
     case "$opt" in
         h)
             show_help
@@ -218,6 +242,8 @@ while getopts "hvsta" opt; do
             ;;
         t)  today=1
             ;;
+        f)  force=1
+            ;;
         a)  limit=1
             ;;
         '?')
@@ -228,10 +254,11 @@ while getopts "hvsta" opt; do
 done
 shift "$((OPTIND-1))" # Shift off the options and optional --.
 
-if [ $init = 1 ]; then
+if [ $init == 1 ]; then
   echo "Init local Opam repository in ${OPAMROOT}"
   if [ ! -d ${OPAMROOT} ]; then
     setup
+    html
   fi
 fi
 
@@ -239,15 +266,15 @@ from="2012-05-19"
 #from="2012-08-24"
 #to="2012-10-19"
 from="2015-02-27"
-if [ $today = 1 ]; then
-  from=$(/bin/date --date "1 days ago" +%Y-%m-%d)
+if [ $today == 1 ]; then
+  from=$(/bin/date +%Y-%m-%d)
 else
   from=${1:-$(/bin/date --date "10 days ago" +%Y-%m-%d)}
 fi
 to=${2:-$(/bin/date +%Y-%m-%d)}
 
-echo "Updating Opam repository analysis from $from to $to"
+echo "Updating Opam repository from $from to $to"
 
-cd ${OPAMREPO} && replay $from $to $limit
+cd ${OPAMREPO} && replay $from $to $limit $force
 
 
