@@ -10,6 +10,10 @@ DISTCHECK=~/Projects/repos/mancoosi-tools/dose/dose-distcheck
 OPAM=~/Projects/repos/opam/src/opam
 OPAMOPTIONS="--quiet --use-internal-solver"
 
+OWSRUN=~/Projects/repos/ows/ows-run
+OWSARCHIVE=~/Projects/repos/ows/ows-archive
+OWSUPDATE=~/Projects/repos/ows/ows-update
+
 # distcheck output
 REPORTDIR=${BASEDIR}/reports
 

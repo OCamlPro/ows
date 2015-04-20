@@ -16,14 +16,14 @@ fi
 
 ######################################################################
 
-${BASEDIR}/ows-update -t
+${OWSUPDATE} -a
 
 for i in `ls -d ${REPORTDIR}/$(/bin/date +%Y-%m-)*/*`; do
   if [ -d $i ]; then
-    ${BASEDIR}/ows-run --targetdir ${TARGETDIR} --baseurl ${BASEURL} --nosvg --nocache $i
+    ${OWSRUN} --targetdir ${TARGETDIR} --baseurl ${BASEURL} --nosvg --nocache $i
   else
     echo "Empty $i"
   fi
 done
 
-${BASEDIR}/ows-archive ${TARGETDIR}
+${OWSARCHIVE} ${TARGETDIR}

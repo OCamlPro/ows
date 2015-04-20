@@ -65,17 +65,24 @@ def parse(f):
                 d['report'].setdefault(name,[p]).append(p)
     return d
 
-def plot(options,history,switches):
+def plot(options,history):
     print "Computing Graph"
     output = os.path.join(options['dirname'],"plot.png")
     fig = plt.figure()
     graph = fig.add_subplot(111)
-    history = filter(all(s in x[s] for x,s in zip([x[1]['summary']['totals'] for x in history if 'summary' in x[1]], switches)),history)
-    h = [x[1]['summary']['totals'] for x in history if 'summary' in x[1]]
-    ds = [date2num(x[0]) for x in history if 'summary' in x[1]]
+    h = [(x[0],x[1]['summary']['totals']) for x in history if 'summary' in x[1]]
+    switches = set()
+    hs = {}
+    
+    for e in h:
+        t = e[0]
+        for switch,(total,broken,ok) in e[1].iteritems():
+            hs.setdefault(switch,[]).append((date2num(t),ok))
+            switches.add(switch)
+
     for s in switches :
-        hs = [x[s][2] for x in h]
-        graph.plot_date(ds,hs,",-",label=s)
+        d = zip(*(hs[s]))
+        graph.plot_date(d[0],d[1],",-",label=s)
 
     plt.legend(loc='upper left')
     plt.title('Installable Package versions vs Time')
@@ -330,7 +337,8 @@ def load_or_parse(reportdir,nocache):
 
     if os.path.exists(picklefile) :
         print "Load Cache"
-        (switches,ar,sr) = pickle.load(open(picklefile,'r'))
+        with open(picklefile,'r') as f :
+            (switches,ar,sr) = pickle.load(f)
     else :
         report = []
         switches = []
@@ -338,19 +346,19 @@ def load_or_parse(reportdir,nocache):
             for name in fnmatch.filter(files, "*.yaml"):
                 fname = os.path.join(root, name)
                 print "Parse ", fname
-                dataset = open(fname)
-                r = parse(dataset)
-                if r : 
-                    switches.append(r['switch'])
-                    report.append(r)
-                dataset.close()
+                with open(fname) as dataset :
+                    r = parse(dataset)
+                    if r : 
+                        switches.append(r['switch'])
+                        report.append(r)
+                    dataset.close()
 
         print "Aggregating Data"
         (ar,sr) = aggregate(report)
         s = signal.signal(signal.SIGINT, signal.SIG_IGN)
-        f = open(picklefile,'wb')
-        pickle.dump((switches,ar,sr),f)
-        f.close()
+        with open(picklefile,'wb') as f :
+            pickle.dump((switches,ar,sr),f)
+            f.close()
         signal.signal(signal.SIGINT, s)
     return (switches,ar,sr)
 
@@ -358,9 +366,9 @@ def load_history(history,date):
     print "Load History ",history
     h = {}
     if os.path.exists(history) :
-        f = open(history,'r')
-        h = pickle.load(f)
-        f.close()
+        with open(history,'r') as f :
+            h = pickle.load(f)
+            f.close()
 
     h[date] = {}
     return OrderedDict(sorted(h.items(),key=lambda r: r[0]))
@@ -373,9 +381,9 @@ def save_history(history,h,sr,switches):
     h[sr['date']] = newsummary
 
     s = signal.signal(signal.SIGINT, signal.SIG_IGN)
-    f = open(history,'wb')
-    pickle.dump(h,f)
-    f.close()
+    with open(history,'ab+') as f :
+        pickle.dump(h,f)
+        f.close()
     signal.signal(signal.SIGINT, s)
 
 def main():
@@ -409,7 +417,7 @@ def main():
     html_credits(options,sr)
     html_backlog(options,history[today-10:today-1][::-1],sr)
     save_history(args.history,h,sr,switches)
-    plot(options,history[:today],switches)
+    plot(options,history[:today])
 
     print
 
