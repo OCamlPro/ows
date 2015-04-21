@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x 
+
 trap 'echo you hit Ctrl-C/Ctrl-\, now exiting..; exit' SIGINT SIGQUIT
 
 #################### Config Variables ########################
@@ -18,26 +20,28 @@ fi
 function archive {
   local age=$(date --date="-$1 days" '+%s')
   local dir=$2
+  
+  cd $dir
+
   for i in $dir/*; do
-    if [[ $i == $dir/20* ]] ; then
+    if [[ $i == 20* ]] ; then
       d=$(basename $i)
       date=$(date --date "$d" '+%s')
       if [ $? = 0 ]; then
         if [ $date -le $age ]; then
-          echo "Create Archive $dir/archive/$d.tgz"
-          GZIP='--rsyncable' tar zcf $dir/archive/$d.tgz $i
+          echo "Create Archive archive/$d.tgz"
+          GZIP='--rsyncable' tar zcf archive/$d.tgz $i
           rm -Rf $i
         fi
       fi
     fi
   done
-  rm -Rf $dir/latest
-  mkdir -p $dir/latest
-  latest=$(ls -d1 $dir/????-??-?? | sort -r | head -1)
+  rm -Rf latest
+  mkdir -p latest
+  latest=$(ls -d1 ????-??-?? | sort -r | head -1)
   # XXX this is not actually the latest commit ... just the one on top according to ls
-  latest=$(basename $latest)/$(ls -1 ${latest} | head -1)
-  latest=$(cat $(basename $REPORTDIR)/$latest/commits | head -1)
-  cd $dir
+  #latest=$(basename $latest)/$(ls -1 ${latest} | head -1)
+  latest=$(cat ${REPORTDIR}/$latest/commits | head -1)
   ln -s ../$latest latest/today
 }
 
