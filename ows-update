@@ -41,7 +41,6 @@ function daterange {
 
 function distcheck {
 
-  local runopam=0
   local date=$(date --date "$1")
   local commit=$2
   local author=$3
@@ -59,14 +58,12 @@ function distcheck {
     if [ ! -s ${dirname}/report-${version}.pef.gz ] || [ $force == 1 ]; then
       echo "Run opam config pef-universe"
       ${OPAM} config pef-universe ${OPAMOPTIONS} --switch ${version} > ${TMPDIR}/report-${version}.pef
-      runopam=1
     else
       zcat ${dirname}/report-${version}.pef.gz > ${TMPDIR}/report-${version}.pef
-    fi
+    fi;
 
     if [ -s ${TMPDIR}/report-${version}.pef ]; then
-      if [ ! -s ${dirname}/report-${version}.yaml ] || [ $runopam == 1 ]; then
-        runopam=0 #reset flag
+      if [ ! -s ${dirname}/report-${version}.yaml ] || [ $force == 1 ]; then
         mkdir -p ${dirname}/${version}
         echo "ocaml-switch: ${version}" > ${dirname}/report-${version}.yaml
         echo "git-date: ${date}" >> ${dirname}/report-${version}.yaml
@@ -82,9 +79,10 @@ function distcheck {
         #gzip ${dirname}/report-${version}.yaml
         gzip -f ${dirname}/report-${version}.pef
       fi
-    else
-      rm ${TMPDIR}/report-${version}.pef
-    fi
+    fi;
+
+    rm -f ${TMPDIR}/report-${version}.pef
+
   done
 
 }
@@ -120,8 +118,8 @@ function replay {
   local limit=$3
   local force=$4
 
-  #git --git-dir ${OPAMREPO}/.git fetch origin &> /dev/null
-  git --git-dir ${OPAMREPO}/.git checkout master &> /dev/null
+  git --git-dir ${OPAMREPO}/.git fetch origin 
+  #git --git-dir ${OPAMREPO}/.git checkout master
   #git --git-dir ${OPAMREPO}/.git pull -a
 
   # Creation of opam-repository
@@ -142,7 +140,7 @@ function replay {
         (cd ${OPAMREPO} && \
         git reset ${commit} --hard && \
         git clean -dxf ) &> /dev/null
-        ${OPAM} update ${OPAMOPTIONS} &> /dev/null
+        ${OPAM} update ${OPAMOPTIONS}
         local date=$(git show -s --format=%ci ${commit})
         local author=$(git show -s --format=%an ${commit})
         local title=$(git show -s --format=%s ${commit})
@@ -168,33 +166,33 @@ EOF
   ## Checkout/update the real opam-repository
 
   if [ ! -d ${OPAMREPO} ]; then
-    git clone git://github.com/ocaml/opam-repository ${OPAMREPO}
+    git clone git://github.com/ocaml/opam-repository ${OPAMREPO} &> /dev/null
   else
     ( cd ${OPAMREPO} && \
       git fetch && \
       git reset origin/master --hard && \
-      git clean -dxf )
+      git clean -dxf ) &> /dev/null
   fi
 
   ## Initialize OPAM
 
-  yes no | ${OPAM} init ${OPAMOPTIONS} --comp=${VERSIONS##* } opam_compilers ${OPAMCOMP}
-  ${OPAM} remote add ${OPAMOPTIONS} -p 0 opam_repository ${OPAMREPO}
+  yes no | ${OPAM} init ${OPAMOPTIONS} --comp=${VERSIONS##* } opam_compilers ${OPAMCOMP} &> /dev/null
+  ${OPAM} remote add ${OPAMOPTIONS} -p 0 opam_repository ${OPAMREPO} &> /dev/null
 
   ## Small hack for opam to prefers the "faked' compilers
 
-  ${OPAM} remote ${OPAMOPTIONS} remove opam_compilers
-  ${OPAM} remote ${OPAMOPTIONS} add -p 20 opam_compilers ${OPAMCOMP}
-  ${OPAM} update ${OPAMOPTIONS}
+  ${OPAM} remote remove ${OPAMOPTIONS} opam_compilers &> /dev/null
+  ${OPAM} remote add ${OPAMOPTIONS} -p 20 opam_compilers ${OPAMCOMP} &> /dev/null
+  ${OPAM} update ${OPAMOPTIONS} &> /dev/null
 
   for version in ${VERSIONS}; do
-    ${OPAM} switch ${OPAMOPTIONS} ${version}
+    ${OPAM} switch ${OPAMOPTIONS} ${version} &> /dev/null
   done
 }
 
 function html {
-  mkdir -f $TARGETDIR
-  cp -a js css fonts static/* $TARGETDIR
+  mkdir -p $TARGETDIR
+  cp -a js css fonts images $TARGETDIR/
 }
 
 ##########################
@@ -256,9 +254,17 @@ shift "$((OPTIND-1))" # Shift off the options and optional --.
 
 if [ $init == 1 ]; then
   echo "Init local Opam repository in ${OPAMROOT}"
-  if [ ! -d ${OPAMROOT} ]; then
+  if [ ! -d ${OPAMROOT} ] || [ $force == 1 ]; then
+    rm -Rf ${OPAMROOT} ${OPAMCOMP} ${OPAMREPO}
     setup
     html
+    echo "Opam repository ready"
+    echo "Now you can run ${0##*/} <startdate> <enddate>" 
+    exit 0
+  else
+    echo "OPAM repository detected in ${OPAMROOT}."
+    echo "User ${0##*/} -s -f to overwrite"
+    exit 0
   fi
 fi
 
