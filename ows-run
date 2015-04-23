@@ -381,24 +381,20 @@ def save_history(history,h,sr,switches):
     h[sr['date']] = newsummary
 
     s = signal.signal(signal.SIGINT, signal.SIG_IGN)
-    with open(history,'wb+') as f :
+    with open(history,'ab+') as f :
         pickle.dump(h,f)
         f.close()
     signal.signal(signal.SIGINT, s)
 
 def main():
-    reportdir=os.environ.setdefault('REPORTDIR','reports')
-    baseurl=os.environ.setdefault('BASEURL','http://ows.irill.org')
-    targetdir=os.environ.setdefault('TARGETDIR','html')
-
     parser = argparse.ArgumentParser(description='create ows static pages')
     #parser.add_argument('-v', '--verbose')
     #parser.add_argument('-d', '--debug', action='store_true', default=False)
     parser.add_argument('--nocache', action='store_true', help="Do not use cache files (if any)", default=False)
     parser.add_argument('--nosvg', action='store_true', help="Do not generate svg files", default=False)
-    parser.add_argument('--baseurl', type=str, help="base url", default=baseurl)
-    parser.add_argument('--targetdir', type=str, help="target html directory", default=targetdir)
-    parser.add_argument('--history', type=str, help="history database", default=os.path.join(reportdir,'history.pickle'))
+    parser.add_argument('--baseurl', type=str, help="base url", default="http://localhost:8000/")
+    parser.add_argument('--targetdir', type=str, help="target html directory", default="html")
+    parser.add_argument('--history', type=str, help="history database", default=os.path.join("reports",'history.pickle'))
     parser.add_argument('reportdir', type=str, nargs=1, help="dataset")
     args = parser.parse_args()
 
