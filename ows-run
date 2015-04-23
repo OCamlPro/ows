@@ -381,7 +381,7 @@ def save_history(history,h,sr,switches):
     h[sr['date']] = newsummary
 
     s = signal.signal(signal.SIGINT, signal.SIG_IGN)
-    with open(history,'ab+') as f :
+    with open(history,'wb') as f :
         pickle.dump(h,f)
         f.close()
     signal.signal(signal.SIGINT, s)
