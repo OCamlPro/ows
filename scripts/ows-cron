@@ -40,7 +40,7 @@ export REPORTDIR=$REPORTDIR
 for date in $range; do
   for i in `ls -d ${REPORTDIR}/$date/*`; do
     if [ -d $i ]; then
-      ${OWSRUN} --targetdir ${TARGETDIR} --baseurl ${BASEURL} $i
+      ${OWSRUN} --targetdir ${TARGETDIR} --baseurl ${BASEURL} --history ${REPORTDIR}/history.pickle $i
     else
       echo "Empty $i"
     fi
