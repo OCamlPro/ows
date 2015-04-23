@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#set -x 
+
 trap 'echo you hit Ctrl-C/Ctrl-\, now exiting..; exit' SIGINT SIGQUIT
 
 #################### Config Variables ########################
@@ -16,14 +18,33 @@ fi
 
 ######################################################################
 
-${OWSUPDATE} -a
+#origin=$(/bin/date --date "10 days ago" +%Y-%m-%d)
+origin=$(/bin/date +%Y-%m-%d)
+currentdate=$(/bin/date +%Y-%m-%d)
 
-for i in `ls -d ${REPORTDIR}/$(/bin/date +%Y-%m-)*/*`; do
-  if [ -d $i ]; then
-    ${OWSRUN} --targetdir ${TARGETDIR} --baseurl ${BASEURL} --nosvg --nocache $i
-  else
-    echo "Empty $i"
-  fi
+function daterange {
+  local currentdate=$1
+  local loopenddate=$(/bin/date --date "$2 1 day" +%Y-%m-%d)
+
+  until [ "$currentdate" == "$loopenddate" ]
+  do
+    echo $currentdate
+    currentdate=$(/bin/date --date "$currentdate 1 day" +%Y-%m-%d)
+  done
+}
+range=$(daterange ${origin} ${currentdate})
+
+${OWSUPDATE} -t
+export REPORTDIR=$REPORTDIR
+
+for date in $range; do
+  for i in `ls -d ${REPORTDIR}/$date/*`; do
+    if [ -d $i ]; then
+      ${OWSRUN} --targetdir ${TARGETDIR} --baseurl ${BASEURL} $i
+    else
+      echo "Empty $i"
+    fi
+  done
 done
 
 ${OWSARCHIVE} ${TARGETDIR}
