@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x 
+#set -x 
 
 trap 'echo you hit Ctrl-C/Ctrl-\, now exiting..; exit' SIGINT SIGQUIT
 
@@ -38,11 +38,9 @@ function archive {
   done
   rm -Rf latest
   mkdir -p latest
-  latest=$(ls -d1 ????-??-?? | sort -r | head -1)
-  # XXX this is not actually the latest commit ... just the one on top according to ls
-  #latest=$(basename $latest)/$(ls -1 ${latest} | head -1)
-  latest=$(cat ${REPORTDIR}/$latest/commits | head -1)
-  ln -s ../$latest latest/today
+  lastday=$(ls -d1 ????-??-?? | sort -r | head -1)
+  lastcommit=$(cat ${REPORTDIR}/$lastday/commits | head -1)
+  ln -s ../$lastday/$lastcommit latest/today
 }
 
 # Usage info
