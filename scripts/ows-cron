@@ -38,13 +38,17 @@ ${OWSUPDATE} -t
 export REPORTDIR=$REPORTDIR
 
 for date in $range; do
-  for i in `ls -d ${REPORTDIR}/$date/*`; do
-    if [ -d $i ]; then
-      ${OWSRUN} --targetdir ${TARGETDIR} --baseurl ${BASEURL} --history ${REPORTDIR}/history.pickle $i
-    else
-      echo "Empty $i"
-    fi
-  done
+  if [ -d ${REPORTDIR}/$date ]; then
+    for i in `ls -d ${REPORTDIR}/$date/*`; do
+      if [ -d $i ]; then
+        ${OWSRUN} --targetdir ${TARGETDIR} --baseurl ${BASEURL} --history ${REPORTDIR}/history.pickle $i
+      else
+        echo "Nothing interesting in $i"
+      fi
+    done
+  else
+    echo "No new commit for today"
+  fi
 done
 
 ${OWSARCHIVE} ${TARGETDIR}

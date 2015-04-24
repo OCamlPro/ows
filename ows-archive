@@ -92,7 +92,7 @@ fi
 
 if hash optipng 2>/dev/null ; then
   echo "PNG compression"
-  find ${TARGETDIR} -name \*.png -exec optipng -o7 {} \;
+  find ${TARGETDIR}/$(date +%Y-%m-%d) -name plot.png -exec optipng {} \;
 fi
 
 if hash hardlink 2>/dev/null ; then

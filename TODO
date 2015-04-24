@@ -2,6 +2,11 @@
 ##Todo list for ows
 
 - Order versions in modal pop-up
+- Add option to ows.py to dump a csv file from history
+- Add a page containing only broken packages and use use it
+  as main page
+
+## DONE
 - Add url to svg
 - Fix graph presentation
-- Add option to ows.py to dump a csv file from history
+
