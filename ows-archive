@@ -90,6 +90,16 @@ else
   exit 1
 fi
 
+if hash optipng 2>/dev/null ; then
+  echo "PNG compression"
+  find ${TARGETDIR} -name \*.png -exec optipng -o7 {} \;
+fi
+
+if hash hardlink 2>/dev/null ; then
+  echo "Remove duplicates file"
+  hardlink ${TARGETDIR}
+fi
+
 echo "Archiving all reports older then $age days in $dir/archive"
 archive $age $dir
 #rsync -avz html/ hazel.rocq.inria.fr:web/public_html/tmp/html/
