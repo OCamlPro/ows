@@ -10,6 +10,7 @@
 		//  "jQueryUI": true,
 		  "bFilter": false,
 		  "ordering": false,
+      "orderClasses": false,
         });
 		//table.columns.adjust().draw();
 		var m = $(this);
@@ -67,16 +68,19 @@
 		  "stateSave": true,
 		  "ordering": false,
 		  "paging": false,
+      "orderClasses": false,
 		} );
 		$('#summary-table-missing').DataTable( {
 		  "ordering": false,
 		  "stateSave": true,
 		  "paging": false,
+      "orderClasses": false,
 		} );
 		$('#summary-table-conflicts').DataTable( {
 		  "ordering": false,
 		  "stateSave": true,
 		  "paging": false,
+      "orderClasses": false,
 		} );
 
 		if (window.location.hash)

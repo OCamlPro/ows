@@ -4,7 +4,7 @@
     <title>Opam Weather Service</title>
 	<meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet" href="{{baseurl}}/css/bootstrap.min.css" rel="stylesheet" media="screen">
+	<link rel="stylesheet" href="{{baseurl}}/css/bootstrap.min.css" media="screen">
 	<link rel="stylesheet" href="{{baseurl}}/css/bootstrap.vertical-tabs.min.css">
 	<link rel="stylesheet" href="{{baseurl}}/css/jquery.dataTables.css">
 	<!--link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"-->
@@ -31,9 +31,9 @@
 			  <li><a href="backlog.html" title="OWS Reports' Archive">Backlog</a></li>
 			  <li><a href="howto.html" title="OWS Documentation">Documentation</a></li>
 			  <li><a href="credits.html" title="About US">Credits</a></li>
-			  <li><a href="http://www.inria.fr/"><img style="height: 50px;" src="{{baseurl}}/images/logo_INRIA.png"/></a></li>
-			  <li><a href="http://www.irill.org"><img style="height: 50px;" src="{{baseurl}}/images/logo_IRILL.png"/></a></li>
-			  <li><a href="http://ocamlpro.com"><img style="background:grey; height: 50px;" src="{{baseurl}}/images/logo_OCAMLPRO.png"/></a></li>
+			  <li><a href="http://www.inria.fr/"><img style="height: 50px;" src="{{baseurl}}/images/logo_INRIA.png" alt="INRIA"/></a></li>
+			  <li><a href="http://www.irill.org"><img style="height: 50px;" src="{{baseurl}}/images/logo_IRILL.png" alt="IRILL"/></a></li>
+			  <li><a href="http://ocamlpro.com"><img style="background:grey; height: 50px;" src="{{baseurl}}/images/logo_OCAMLPRO.png" alt="OCAMLPRO"/></a></li>
 			</ul>
 		  </div>
 		</div>
@@ -43,7 +43,7 @@
 		  <div class="row">
 			<div class="col-md-4">
 			  <h1>OPAM Weather Service
-				<p class="lead">Powered by opam/dose</p>
+				<div class="lead">Powered by opam/dose</div>
 			  </h1>
 			  <h3>{% block title %}{% endblock %}</h3>
 			  <p>{% block intro %}{% endblock %}</p>
@@ -84,7 +84,7 @@
 	  </div>
 	</div>
 
-	<div id="myModal" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+	<div id="myModal" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-hidden="true">
 	  <div class="modal-dialog modal-lg" style="height:80vh">
 		<div class="modal-content"></div>
 	  </div>
@@ -92,7 +92,7 @@
 
 	<script src="{{baseurl}}/js/jquery.min.js"></script>
 	<script src="{{baseurl}}/js/bootstrap.min.js"></script>
-	<script src="{{baseurl}}/js/jquery.dataTables.js"></script>
+	<script src="{{baseurl}}/js/jquery.dataTables.min.js"></script>
 	<script src="{{baseurl}}/js/jquery.svg.min.js"></script>
 	<script src="{{baseurl}}/js/ows.js"></script>
 
