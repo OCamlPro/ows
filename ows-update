@@ -51,7 +51,6 @@ function distcheck {
   echo "Commit $date"
   echo "Saving data in ${dirname}"
   mkdir -p ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)
-  echo "${commit}" >> ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)/commits
 
   for version in ${VERSIONS}; do
 
@@ -128,11 +127,10 @@ function replay {
   for date in $range; do
       local commits=$(rewind_git "$date" "$limit")
       echo "replay $date"
-      echo "${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)/commits"
       if [ ! -d ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d) ]; then
         mkdir -p ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)
       fi
-      if [ -f ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)/commits ]; then
+      if [ -f ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)/commits ] || [ $force == 1]; then
         rm -f ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)/commits
       fi
       for commit in ${commits}; do
