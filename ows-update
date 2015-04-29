@@ -118,8 +118,8 @@ function replay {
   local force=$4
 
   git --git-dir ${OPAMREPO}/.git fetch origin 
-  #git --git-dir ${OPAMREPO}/.git checkout master
-  #git --git-dir ${OPAMREPO}/.git pull -a
+  git --git-dir ${OPAMREPO}/.git checkout master
+  git --git-dir ${OPAMREPO}/.git pull -a
 
   # Creation of opam-repository
   local range=$(daterange ${origin} ${currentdate})
@@ -130,7 +130,7 @@ function replay {
       if [ ! -d ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d) ]; then
         mkdir -p ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)
       fi
-      if [ -f ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)/commits ] || [ $force == 1]; then
+      if [ -f ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)/commits ] || [ $force == 1 ]; then
         rm -f ${REPORTDIR}/$(date --date "$date" +%Y-%m-%d)/commits
       fi
       for commit in ${commits}; do

@@ -38,13 +38,19 @@ OPAM="/home/abate/Projects/repos/opam/src/opam"
 OPAMREPO="/home/abate/Projects/repos/ows/repository/opam-repository"
 OPAMROOT="/home/abate/Projects/repos/ows/repository/opam-root"
 
-
 def runopam(switches,reportdir):
     if not os.path.exists(reportdir) :
         os.makedirs(reportdir)
 
+    FNULL = open(os.devnull, 'w')
+    print "Update Opam"
+    cmd = [OPAM,'update','--quiet','--use-internal-solver']
+    proc = Popen(cmd,stdout=FNULL, stderr=STDOUT, env={'OPAMROOT' : OPAMROOT})
+    proc.communicate()
+
     for switch in switches :
         print "Switch %s" % switch
+
         outfile=os.path.join(reportdir,"report.pef")
         print "Saving pef in %s" % outfile
         cmd = [OPAM,'config','pef-universe','--quiet','--use-internal-solver','--switch',switch]
@@ -57,7 +63,7 @@ def runopam(switches,reportdir):
         inputfile = outfile
         outfile=os.path.join(reportdir,"report-%s.yaml" % switch)
         print "Running Distcheck %s" % outfile
-        cmd = [DISTCHECK,'-f',"-tpef", inputfile]
+        cmd = [DISTCHECK,'-f','-s','-tpef', inputfile]
         with open(outfile,'wa+') as f :
             f.write("ocaml_switch: %s\n" % switch)
             f.flush()
@@ -73,8 +79,8 @@ def replay(commit) :
     repo.git.clean('-xdf')
     repo.remotes.origin.fetch()
     repo.git.checkout(commit)
-    repo.git.reset('--hard',commit)
-    repo.git.clean('-xdf')
+#    repo.git.reset('--hard',commit)
+#    repo.git.clean('-xdf')
 
     print list(repo.iter_commits())[0]
 
@@ -125,9 +131,12 @@ def load_and_parse(reportdir,commit1,commit2):
 
 def compare(reportdir,commit1,commit2) :
     print "Comparing reports %s - %s" % (commit1,commit2)
+    d = []
     for (r1,r2) in load_and_parse(reportdir,commit1,commit2) :
         (ok1,br1) = makeset(r1)
         (ok2,br2) = makeset(r2)
+        #print "len r2 %d" % (len((ok2 | br2)))
+        #print "len r1 %d" % (len((ok1 | br1)))
 
         if r1['switch'] != r2['switch'] :
             print "ERORRRRRRRRRRRRRRRR"
@@ -136,30 +145,45 @@ def compare(reportdir,commit1,commit2) :
         
         new = (((ok2 | br2) - (ok1 | br1)))
         if len(new) > 0 :
-            print "These packages are NEW %s (%s)" % (commit2,r2['commit'])
+            print "These packages are NEW (%s)" % commit2
             for (n,v) in new :
                 print "(%s,%s)" % (n,v)
 
         rem = (((ok1 | br1) - (ok2 | br2)))
         if len(rem) > 0 :
-            print "These packages were REMOVED %s (%s)" % (commit2,r2['commit'])
+            print "These packages were REMOVED (%s)" % (commit2)
             for (n,v) in rem :
                 print "(%s,%s)" % (n,v)
 
         fixed = [p for p in br1 if p in ok2]
         if len(fixed) > 0 :
-            print "These packages were FIXED %s (%s)" % (commit2,r2['commit'])
+            print "These packages were FIXED (%s)" % (commit2)
             for (n,v) in fixed :
                 print "(%s,%s)" % (n,v)
 
         broken = [p for p in br2 if p in ok1]
         if len(broken) :
-            print "These packages are now BROKEN %s (%s)" % (commit2,r2['commit'])
+            print "These packages are now BROKEN (%s)" % (commit2)
             for (n,v) in broken :
                 print "(%s,%s)" % (n,v)
 
+        d.append((new,rem,fixed,broken))
         print
 
+    return d
+
+def run(commit1,commit2) :
+
+    reportdir = tempfile.mkdtemp('ows-diff')
+    switches=VERSIONS.split()
+
+    replay(commit1)
+    runopam(switches,os.path.join(reportdir,commit1))
+
+    replay(commit2)
+    runopam(switches,os.path.join(reportdir,commit2))
+
+    return compare(reportdir,commit1,commit2)
 
 def main():
     parser = argparse.ArgumentParser(description='Confront two distcheck reports')
@@ -169,17 +193,7 @@ def main():
 
     commit1 = args.commit1[0]
     commit2 = args.commit2[0]
-    reportdir = tempfile.mkdtemp('ows-diff')
-    switches=VERSIONS.split()
-
-    #checkout and run opam/distcheck combo for commit 1 and commit2
-    replay(commit1)
-    runopam(switches,os.path.join(reportdir,commit1))
-
-    replay(commit2)
-    runopam(switches,os.path.join(reportdir,commit2))
-
-    compare(reportdir,commit1,commit2)
+    run(commit1,commit2)
 
 if __name__ == '__main__':
     main()
