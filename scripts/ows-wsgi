@@ -1,0 +1,36 @@
+#!/usr/bin/python
+
+from bottle import Bottle, run
+from bottle import get, post, request
+import json
+import base64
+import git
+import uuid
+import owsdiff
+
+app = Bottle()
+
+@app.route('/diff/<commit1>/<commit2>')
+def diff():
+    (new,rem,fixed,broken) = owsdiff.run(commit1,commit2)
+    return "Ows Diff Service %s %s" % (commit1,commit2)
+
+@app.route('/jdiff',method='POST')
+def jdiff():
+    data = request.json
+    commit1 = request.json['commit']
+    patch = request.json['patch']
+
+    newbranch=str(uuid.uuid1())
+    repo = git.Repo(owsdiff.OPAMREPO)
+    repo.git.reset('--hard')
+    repo.git.clean('-xdf')
+    repo.remotes.origin.fetch()
+    repo.git.checkout(b=newbranch)
+    repo.git.apply(patchfile)
+    repo.git.checkout('master')
+    repo.git.branch('-D',newbranch)
+    
+#    (new,rem,fixed,broken) = owsdiff.run(commit1,commit2)
+
+run(app, host='localhost', port=8080)

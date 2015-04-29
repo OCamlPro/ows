@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -x 
+
+commit=$1
+patchfile=$2
+patch64=$(base64 -w 0 ${patchfile})
+
+tempfile=$(mktemp)
+cat<<EOF > ${tempfile}
+{"commit": "${commit}",
+ "patch": "${patch64}"}
+EOF
+
+curl -H "Content-Type: application/json" --data @${tempfile} http://localhost:8080/jdiff
+
+rm ${tempfile}
