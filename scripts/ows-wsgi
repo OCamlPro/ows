@@ -1,11 +1,16 @@
 #!/usr/bin/python
 
+import os, sys
+lib_path = os.path.abspath(os.path.join('..'))
+sys.path.append(lib_path)
+
 from bottle import Bottle, run
 from bottle import get, post, request
 import json
 import base64
 import git
 import uuid
+import tempfile
 import owsdiff
 
 app = Bottle()
@@ -17,20 +22,35 @@ def diff():
 
 @app.route('/jdiff',method='POST')
 def jdiff():
-    data = request.json
-    commit1 = request.json['commit']
+    commit = request.json['commit']
     patch = request.json['patch']
+    (fid,patchfile) = tempfile.mkstemp('ows-wsgi')
+    with open(patchfile,'w') as f :
+        f.write(base64.b64decode(patch))
+        f.close
 
     newbranch=str(uuid.uuid1())
+
     repo = git.Repo(owsdiff.OPAMREPO)
     repo.git.reset('--hard')
     repo.git.clean('-xdf')
-    repo.remotes.origin.fetch()
-    repo.git.checkout(b=newbranch)
+#    repo.remotes.origin.fetch()
+
+    repo.git.checkout(commit,b=newbranch)
+    repo.git.reset('--hard')
+    repo.git.clean('-xdf')
     repo.git.apply(patchfile)
+    repo.index.commit("travis")
+
+    print "aaa >>%s<<",repo.commit()
+
+    diff = owsdiff.run(commit,str(repo.commit()))
+
+    repo.git.reset('--hard')
+    repo.git.clean('-xdf')
     repo.git.checkout('master')
     repo.git.branch('-D',newbranch)
-    
-#    (new,rem,fixed,broken) = owsdiff.run(commit1,commit2)
+
+    os.remove(patchfile)
 
 run(app, host='localhost', port=8080)

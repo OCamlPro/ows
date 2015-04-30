@@ -2,6 +2,7 @@
 
 set -x 
 
+#d817d9dbcde11466a23ac52ff7846744d6a48777
 commit=$1
 patchfile=$2
 patch64=$(base64 -w 0 ${patchfile})

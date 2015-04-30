@@ -77,7 +77,7 @@ def replay(commit) :
     repo = git.Repo(OPAMREPO)
     repo.git.reset('--hard')
     repo.git.clean('-xdf')
-    repo.remotes.origin.fetch()
+#    repo.remotes.origin.fetch()
     repo.git.checkout(commit)
 #    repo.git.reset('--hard',commit)
 #    repo.git.clean('-xdf')
