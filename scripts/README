@@ -1,0 +1,14 @@
+
+ows-wsgi is a wsgi restfull server
+
+- python-git
+- python-bottle
+
+./curlsend d817d9dbcde11466a23ac52ff7846744d6a48777 patch.test
+
+d817d9dbcde11466a23ac52ff7846744d6a48777 is the base reference commit
+patch.test is a patch to apply used to create a new branch from the
+reference commit.
+
+ows-wsgi will compute the differences between the reference commit 
+and the new commit after the patch is applied.
