@@ -1,0 +1,94 @@
+#!/usr/bin/python
+
+import os, sys
+lib_path = os.path.abspath(os.path.join('..'))
+sys.path.append(lib_path)
+
+from bottle import Bottle, run
+from bottle import get, post, request, response, static_file
+import json
+import base64
+import git
+import uuid
+import tempfile
+import owsdiff
+from jinja2 import Environment, FileSystemLoader
+
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
+
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+j2_env = Environment(loader=FileSystemLoader(THIS_DIR),trim_blocks=True)
+BASEURL="http://localhost:8080"
+TARGETDIR=os.path.join(THIS_DIR,'html')
+
+# Static Routes
+@get('/<filename:re:.*\.js>')
+def javascripts(filename):
+    return static_file(filename, root=os.path.join(THIS_DIR,'html'))
+
+@get('/<filename:re:.*\.css>')
+def stylesheets(filename):
+    return static_file(filename, root=os.path.join(THIS_DIR,'html'))
+
+@get('/<filename:re:.*\.(jpg|png|gif|ico)>')
+def images(filename):
+    return static_file(filename, root=os.path.join(THIS_DIR,'html'))
+
+@get('/<filename:re:.*\.(eot|ttf|woff|svg)>')
+def fonts(filename):
+    return static_file(filename, root=os.path.join(THIS_DIR,'html'))
+
+@get('/compare/form')
+def form():
+    template = j2_env.get_template('templates/compare/form.html')
+    output = template.render({'baseurl' : BASEURL})
+    return output
+
+@post('/compare/submit')
+def submit():
+    commit1 = request.forms.get('commit1')
+    commit2 = request.forms.get('commit2')
+    patch = request.files.get('patch')
+    pp.pprint(request.forms.items())
+
+    if patch :
+        (fid,patchfile) = tempfile.mkstemp('ows-wsgi')
+        with open(patchfile, 'w') as open_file:
+            open_file.write(upload.file.read())
+        open_file.close()
+        diff = owsdiff.patch(commit1,patchfile)
+        os.remove(patchfile)
+    else :
+        diff = owsdiff.run(commit1,commit2)
+ 
+    template = j2_env.get_template('templates/compare/modal.html')
+    output = template.render({'report' : diff, 'commit1' : commit1, 'commit2' : commit2, 'baseurl' : BASEURL})
+    return output
+
+@get('/compare/<commit1>/<commit2>')
+def htmldiff(commit1,commit2):
+    diff = owsdiff.run(commit1,commit2)
+    template = j2_env.get_template('templates/compare/static.html')
+    output = template.render({'report' : diff, 'commit1' : commit1, 'commit2' : commit2, 'baseurl' : BASEURL})
+    return output
+
+@post('/compare/api/compare')
+def jsondiff():
+    commit = request.json['commit']
+    patch = request.json['patch']
+
+    (fid,patchfile) = tempfile.mkstemp('ows-wsgi')
+    with open(patchfile,'w') as f :
+        f.write(base64.b64decode(patch))
+        f.close
+
+    diff = run(commit,patchfile)
+
+    os.remove(patchfile)
+
+    response.content_type = 'application/json'
+    return diff
+
+run(host='localhost', port=8080)
+

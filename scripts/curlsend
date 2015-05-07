@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x 
+#set -x 
 
 #d817d9dbcde11466a23ac52ff7846744d6a48777
 commit=$1
@@ -13,6 +13,8 @@ cat<<EOF > ${tempfile}
  "patch": "${patch64}"}
 EOF
 
-curl -H "Content-Type: application/json" --data @${tempfile} http://localhost:8080/jdiff
+curl -H "Content-Type: application/json" --data @${tempfile} http://localhost:8080/api/diff
 
 rm ${tempfile}
+
+curl http://localhost:8080/diff/master/d817d9dbcde11466a23ac52ff7846744d6a48777

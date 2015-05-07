@@ -1,0 +1,60 @@
+{% extends "templates/page.html" %}
+{% block title %}OWS Compare Service{% endblock %}
+{% block intro %}
+{% endblock %}
+
+{% block content %}
+<form id="compare" class="form-horizontal">
+  <fieldset>
+
+  <!-- Form Name -->
+  <legend>OWS Compare</legend>
+
+  <!-- Text input-->
+  <div class="control-group">
+    <label class="control-label" for="commit1">Base Commit</label>
+    <div class="controls">
+      <input name="commit1" placeholder="master^^" value="master^^" class="input-xlarge" required="true" type="text">
+      <p class="help-block">git commit reference</p>
+    </div>
+  </div>
+
+  <!-- Text input-->
+  <div class="control-group">
+    <label class="control-label" for="commit2">Diff Commit</label>
+    <div class="controls">
+      <input name="commit2" placeholder="master" value="master" class="input-xlarge" required="true" type="text">
+      <p class="help-block">git commit reference</p>
+    </div>
+  </div>
+
+  <!-- Button -->
+  <div class="control-group">
+    <label class="control-label" for="diff"></label>
+    <div class="controls">
+      <button type="submit" data-toggle="modal" data-target="#myModal" class="btn btn-primary">Compare</button>
+    </div>
+  </div>
+
+  </fieldset>
+</form>
+
+<div id="loaderDiv" class="collapse">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+    <h4 class="modal-title" id="myModalLabel">OWS Compare</h4>
+  </div>
+
+  <div class="modal-body center-block">
+    <img src="/images/spinner.gif" alt="Wait" class="img-responsive center-block" />
+    <div class="center-block">It can take up to 2 minutes to process your request. Do not refresh this page.</div>
+  </div>
+
+  <div class="modal-footer">
+    <!--button type="button" class="btn btn-default" data-dismiss="modal">Close</button-->
+  </div>
+</div>
+
+{% endblock %}
+
+

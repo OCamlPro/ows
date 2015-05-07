@@ -129,46 +129,48 @@ def load_and_parse(reportdir,commit1,commit2):
     ro2 = sorted(r2,key=lambda r: r['switch'])
     return (zip(ro1,ro2))
 
+def printset(commit,d) :
+    for (new,rem,fixed,broken,switch) in d :
+        print "Switch: %s" % switch
+        if len(new) > 0 :
+            print "These packages are NEW (%s)" % commit
+            for (n,v) in new :
+                print "(%s,%s)" % (n,v)
+
+        if len(rem) > 0 :
+            print "These packages were REMOVED (%s)" % commit
+            for (n,v) in rem :
+                print "(%s,%s)" % (n,v)
+
+        if len(fixed) > 0 :
+            print "These packages were FIXED (%s)" % commit
+            for (n,v) in fixed :
+                print "(%s,%s)" % (n,v)
+
+        if len(broken) :
+            print "These packages are now BROKEN (%s)" % commit
+            for (n,v) in broken :
+                print "(%s,%s)" % (n,v)
+
+    print
+ 
+
 def compare(reportdir,commit1,commit2) :
     print "Comparing reports %s - %s" % (commit1,commit2)
     d = []
     for (r1,r2) in load_and_parse(reportdir,commit1,commit2) :
         (ok1,br1) = makeset(r1)
         (ok2,br2) = makeset(r2)
-        #print "len r2 %d" % (len((ok2 | br2)))
-        #print "len r1 %d" % (len((ok1 | br1)))
-
-        if r1['switch'] != r2['switch'] :
-            print "ERORRRRRRRRRRRRRRRR"
-
-        print "Switch ", r2['switch']
+        switch = r1['switch']
         
-        new = (((ok2 | br2) - (ok1 | br1)))
-        if len(new) > 0 :
-            print "These packages are NEW (%s)" % commit2
-            for (n,v) in new :
-                print "(%s,%s)" % (n,v)
-
-        rem = (((ok1 | br1) - (ok2 | br2)))
-        if len(rem) > 0 :
-            print "These packages were REMOVED (%s)" % (commit2)
-            for (n,v) in rem :
-                print "(%s,%s)" % (n,v)
-
+        new = list(((ok2 | br2) - (ok1 | br1)))
+        rem = list(((ok1 | br1) - (ok2 | br2)))
         fixed = [p for p in br1 if p in ok2]
-        if len(fixed) > 0 :
-            print "These packages were FIXED (%s)" % (commit2)
-            for (n,v) in fixed :
-                print "(%s,%s)" % (n,v)
-
         broken = [p for p in br2 if p in ok1]
-        if len(broken) :
-            print "These packages are now BROKEN (%s)" % (commit2)
-            for (n,v) in broken :
-                print "(%s,%s)" % (n,v)
 
-        d.append((new,rem,fixed,broken))
-        print
+        d.append((new,rem,fixed,broken,r1['switch']))
+
+    pp.pprint(d)
 
     return d
 
@@ -178,12 +180,38 @@ def run(commit1,commit2) :
     switches=VERSIONS.split()
 
     replay(commit1)
+    print reportdir
+    print commit1
     runopam(switches,os.path.join(reportdir,commit1))
 
     replay(commit2)
     runopam(switches,os.path.join(reportdir,commit2))
 
-    return compare(reportdir,commit1,commit2)
+    d = compare(reportdir,commit1,commit2)
+    return d
+
+def patch(commit,patchfile):
+    newbranch=str(uuid.uuid1())
+
+    repo = git.Repo(owsdiff.OPAMREPO)
+    repo.git.reset('--hard')
+    repo.git.clean('-xdf')
+#    repo.remotes.origin.fetch()
+
+    repo.git.checkout(commit,b=newbranch)
+    repo.git.reset('--hard')
+    repo.git.clean('-xdf')
+    repo.git.apply(patchfile)
+    repo.index.commit("travis")
+
+    diff = owsdiff.run(commit,str(repo.commit()))
+
+    repo.git.reset('--hard')
+    repo.git.clean('-xdf')
+    repo.git.checkout('master')
+    repo.git.branch('-D',newbranch)
+
+    return diff
 
 def main():
     parser = argparse.ArgumentParser(description='Confront two distcheck reports')
@@ -193,7 +221,8 @@ def main():
 
     commit1 = args.commit1[0]
     commit2 = args.commit2[0]
-    run(commit1,commit2)
+    d = run(commit1,commit2)
+    printset(commit1,d)
 
 if __name__ == '__main__':
     main()
