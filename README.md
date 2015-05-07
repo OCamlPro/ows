@@ -10,7 +10,6 @@ Copyright : 2015 Inria
  
 Author(s) : Pietro Abate <pietro . abate @ pps . univ - paris - diderot . fr>
 
-
 ## Dependencies
 - CSS
  * bootstrap ( http://getbootstrap.com/css/ )

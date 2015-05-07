@@ -47,28 +47,32 @@
 			  <h3>{% block title %}{% endblock %}</h3>
 			  <p>{% block intro %}{% endblock %}</p>
 		  </div>
-		  <div class="col-md-4">
-			<img class="img-responsive" alt="Installable packages vs Time" src="plot.png"/>
-		  </div>
-		  <div class="col-md-4">
-			  <div class="well well-lg">
-				<div class="row">
-				  <div class="col-sm-12">
-					<h4>Status of the Repository ({{summary['date']}})</h4>
-					<ol>
-					  <li>Package Names: {{ summary['totalnames'] }}</li>
-					  <li>Broken Packages: {{ summary['broken'] }}</li>
-					  <li>Partially Broken Packages: {{ summary['partial'] }}</li>
-					  <li>Correct Packages: {{ summary['correct'] }}</li>
-					</ol>
-					<p><a class="btn btn-social-icon btn-sm btn-github"
-					      href="https://github.com/ocaml/opam-repository/tree/{{summary['commit']}}">
-						<i class="fa fa-github"></i> View Commit Tree</a>
-					</p>
+		  {% if summary is defined %}
+			<div class="col-md-4">
+			  <img class="img-responsive" alt="Installable packages vs Time" src="plot.png"/>
+			</div>
+			<div class="col-md-4">
+				<div class="well well-lg">
+				  <div class="row">
+					<div class="col-sm-12">
+					  <h4>Status of the Repository ({{summary['date']}})</h4>
+					  <ol>
+						<li>Package Names: {{ summary['totalnames'] }}</li>
+						<li>Broken Packages: {{ summary['broken'] }}</li>
+						<li>Partially Broken Packages: {{ summary['partial'] }}</li>
+						<li>Correct Packages: {{ summary['correct'] }}</li>
+					  </ol>
+					  <p><a class="btn btn-social-icon btn-sm btn-github"
+							href="https://github.com/ocaml/opam-repository/tree/{{summary['commit']}}">
+						  <i class="fa fa-github"></i> View Commit Tree</a>
+					  </p>
+					</div>
 				  </div>
 				</div>
-			  </div>
-		  </div>
+			</div>
+		  {% else %}
+			<div class="col-md-8"></div>
+		  {% endif %}
 		</div>
 	   </div><!--/container-->
 

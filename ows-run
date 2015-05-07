@@ -44,6 +44,7 @@ datefmt = "%a %b %d %H:%M:%S %Z %Y"
 def save_page(output,fname):
     with open(fname, 'w', encoding='utf-8') as f:
         f.write(output)
+    f.close()
 
 def parse(f):
     data = yaml.load(f, Loader=yamlLoader)
