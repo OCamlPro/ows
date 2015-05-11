@@ -41,6 +41,12 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 j2_env = Environment(loader=FileSystemLoader(THIS_DIR),trim_blocks=True)
 datefmt = "%a %b %d %H:%M:%S %Z %Y"
 
+def versiontuple(v):
+   filled = []
+   for point in v.split("."):
+      filled.append(point.zfill(8))
+   return tuple(filled)
+
 def save_page(output,fname):
     with open(fname, 'w', encoding='utf-8') as f:
         f.write(output)
@@ -361,6 +367,8 @@ def load_or_parse(reportdir,nocache):
             pickle.dump((switches,ar,sr),f)
             f.close()
         signal.signal(signal.SIGINT, s)
+    switches = sorted(switches,key=lambda r: versiontuple(r),reverse=True)
+    print switches
     return (switches,ar,sr)
 
 def load_history(history,date):
