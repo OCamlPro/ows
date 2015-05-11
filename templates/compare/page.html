@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Opam Weather Service</title>
+	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="{{baseurl}}/css/bootstrap.min.css" media="screen">
+	<link rel="stylesheet" href="{{baseurl}}/css/custom.css">
+  </head>
+  <body>
+
+	  <div class="navbar navbar-default" role="banner">
+		<div class="container">
+		  <div class="navbar-header">
+			<button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".navbar-collapse">
+			  <span class="sr-only">Toggle navigation</span>
+			  <span class="icon-bar"></span>
+			  <span class="icon-bar"></span>
+			  <span class="icon-bar"></span>
+			</button>
+			<a href="{{baseurl}}/latest/today/index.html" class="navbar-brand" title="Most Recent OWS Report">OWS</a>
+		  </div>
+		  <div class="collapse navbar-collapse" role="navigation">
+			<ul class="nav navbar-nav">
+			  <li><a href="index.html" title="Opam Repository Status Overview">Weather</a></li>
+			  <li><a href="summary.html" title="Summary of the Most Offending Broken Packages">Summary</a></li>
+			  <li><a href="backlog.html" title="OWS Reports' Archive">Backlog</a></li>
+			  <li><a href="howto.html" title="OWS Documentation">Documentation</a></li>
+			  <li><a href="credits.html" title="About US">Credits</a></li>
+			  <li><a href="http://www.inria.fr/"><img style="height: 50px;" src="{{baseurl}}/images/logo_INRIA.png" alt="INRIA"/></a></li>
+			  <li><a href="http://www.irill.org"><img style="height: 50px;" src="{{baseurl}}/images/logo_IRILL.png" alt="IRILL"/></a></li>
+			  <li><a href="http://ocamlpro.com"><img style="background:grey; height: 50px;" src="{{baseurl}}/images/logo_OCAMLPRO.png" alt="OCAMLPRO"/></a></li>
+			</ul>
+		  </div>
+		</div>
+	  </div>
+
+	  <div class="container">
+		  <div class="row">
+			<div class="col-md-4">
+			  <h1>OPAM Weather Service</h1>
+			  <h3>Powered by opam/dose</h3>
+			  <h3>{% block title %}{% endblock %}</h3>
+			  <p>{% block intro %}{% endblock %}</p>
+		  </div>
+		  {% if summary is defined %}
+			<div class="col-md-4">
+			  <img class="img-responsive" alt="Installable packages vs Time" src="plot.png"/>
+			</div>
+			<div class="col-md-4">
+				<div class="well well-lg">
+				  <div class="row">
+					<div class="col-sm-12">
+					  <h4>Status of the Repository ({{summary['date']}})</h4>
+					  <ol>
+						<li>Package Names: {{ summary['totalnames'] }}</li>
+						<li>Broken Packages: {{ summary['broken'] }}</li>
+						<li>Partially Broken Packages: {{ summary['partial'] }}</li>
+						<li>Correct Packages: {{ summary['correct'] }}</li>
+					  </ol>
+					  <p><a class="btn btn-social-icon btn-sm btn-github"
+							href="https://github.com/ocaml/opam-repository/tree/{{summary['commit']}}">
+						  <i class="fa fa-github"></i> View Commit Tree</a>
+					  </p>
+					</div>
+				  </div>
+				</div>
+			</div>
+		  {% else %}
+			<div class="col-md-8"></div>
+		  {% endif %}
+		</div>
+	   </div><!--/container-->
+
+    <div class="container">
+	  {% block content %}{% endblock %}
+    </div>
+
+	<div id="footer">
+	  <div class="container">
+		<p>OWS is free and open source software. Get the <a href="https://github.com/OCamlPro/ows">Code (GPL3+)</a>.</p>
+		<p>Author(s) : Pietro Abate (C) 2015</p>
+	  </div>
+	</div>
+
+	<div id="myModal" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-hidden="true">
+	  <div class="modal-dialog modal-lg" style="height:80vh">
+		<div class="modal-content"></div>
+	  </div>
+	</div>
+
+	<script src="{{baseurl}}/js/jquery.min.js"></script>
+	<script src="{{baseurl}}/js/bootstrap.min.js"></script>
+	<script src="{{baseurl}}/js/ows-compare.js"></script>
+
+  </body>
+
+</html>
