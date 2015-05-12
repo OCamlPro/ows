@@ -127,7 +127,7 @@ def aggregate(d):
 
             for name, l in report['report'].iteritems() :
                 if name not in aggregatereport :
-                    aggregatereport[name] = {}
+                    aggregatereport[name] = OrderedDict()
                     summary[name] = {}
 
                 status = {'ok' : 0, 'broken' : 0}
@@ -185,6 +185,8 @@ def aggregate(d):
     switchnumber = len(d)
     for name,switches in summary.iteritems() :
         broken,correct,undefined,total_versions = 0,0,0,0
+        aggregatereport[name] = OrderedDict(sorted(aggregatereport[name].items(),key=lambda x: versiontuple(x[0]),reverse=True))
+        print aggregatereport[name].keys()
         for version, results in aggregatereport[name].iteritems() :
             for s in switches :
                 total_versions += 1
