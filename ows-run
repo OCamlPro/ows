@@ -20,7 +20,7 @@ import os, signal
 import argparse
 import csv
 import datetime as dt
-
+import json
 import pydot
 
 import matplotlib
@@ -35,17 +35,33 @@ from operator import itemgetter, attrgetter, methodcaller
 from collections import defaultdict
 from collections import OrderedDict
 
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
+
 from jinja2 import Environment, FileSystemLoader
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 j2_env = Environment(loader=FileSystemLoader(THIS_DIR),trim_blocks=True)
 datefmt = "%a %b %d %H:%M:%S %Z %Y"
 
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, dt.datetime):
+          return str(o.isoformat())
+
+        try :
+            r = json.JSONEncoder.default(self, o)
+        except TypeError(msg) :
+            pp.pprint(o)
+            raise TypeError(msg)
+        pp.pprint(o)
+        return r
+
 def versiontuple(v):
-   filled = []
-   for point in v.split("."):
-      filled.append(point.zfill(8))
-   return tuple(filled)
+    filled = []
+    for point in v.split("."):
+       filled.append(point.zfill(8))
+    return tuple(filled)
 
 def save_page(output,fname):
     with open(fname, 'w', encoding='utf-8') as f:
@@ -186,7 +202,6 @@ def aggregate(d):
     for name,switches in summary.iteritems() :
         broken,correct,undefined,total_versions = 0,0,0,0
         aggregatereport[name] = OrderedDict(sorted(aggregatereport[name].items(),key=lambda x: versiontuple(x[0]),reverse=True))
-        print aggregatereport[name].keys()
         for version, results in aggregatereport[name].iteritems() :
             for s in switches :
                 total_versions += 1
@@ -279,6 +294,10 @@ def html_weather(options,aggregatereport,summaryreport,switches):
     output = template.render({'summary' : summaryreport, 'switches': switches, 'baseurl' : options['baseurl']})
     fname = os.path.join(options['dirname'],"index.html")
     save_page(output,fname)
+
+    data = {'switches': switches, 'date' : summaryreport['date'], 'aggregatereport' : aggregatereport }
+    json_string = json.dumps(data,cls=DateTimeEncoder,skipkeys=True,indent=4, separators=(',', ': '),sort_keys=True)
+    save_page(json_string,os.path.join(options['dirname'],"weather.json"))
  
 def html_summary(options,summaryreport,switches):
     print "Compiling Summary Page"
@@ -370,7 +389,6 @@ def load_or_parse(reportdir,nocache):
             f.close()
         signal.signal(signal.SIGINT, s)
     switches = sorted(switches,key=lambda r: versiontuple(r),reverse=True)
-    print switches
     return (switches,ar,sr)
 
 def load_history(history,date):
