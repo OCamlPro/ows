@@ -71,7 +71,7 @@ function distcheck {
         echo "git-title: |" >> ${dirname}/report-${version}.yaml
         echo " ${title}" >> ${dirname}/report-${version}.yaml
         echo "Running distcheck"
-        ${DISTCHECK} --dot \
+        ${DISTCHECK} --dot --fields maintainer \
           --outdir ${dirname}/${version} pef://${TMPDIR}/report-${version}.pef \
           -m --summary -e -s -f >> ${dirname}/report-${version}.yaml
         mv ${TMPDIR}/report-${version}.pef ${dirname}/
@@ -203,8 +203,8 @@ Bootstrap and update opam repositories for OWS.
 
     -h          display this help and exit
     -s          setup the a local opam repository
-    -v          verbose mode. Can be used multiple times for increased
-                verbosity.
+    -v          verbose mode. Can be used multiple times for increased verbosity.
+    -f          ignored cached files
     -t          get the last commits for today
     -a          consider all commits (only the most recent is considered by default)
 

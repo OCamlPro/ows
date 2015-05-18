@@ -3,6 +3,26 @@ $('body').on('hidden.bs.modal', '.modal', function () {
 $(this).removeData('bs.modal');
 });
 
+jQuery.validator.setDefaults({
+  debug: true,
+  success: "valid"
+});
+
+$( "#compareForm" ).validate({
+  rules: {
+      commit2: {
+          required: function(element) {
+              return $("#patch").is(':empty');
+          }
+      },
+      patch: {
+          required: function(element) {
+              return $("#commit2").is(':empty');
+          }
+      }
+  }
+});
+
 $(document).ready(function() {
   $("form#compare").submit(function(e){
       $.ajax({

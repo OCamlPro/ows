@@ -1,4 +1,4 @@
-{% extends "templates/page.html" %}
+{% extends "templates/compare/page.html" %}
 {% block title %}OWS Compare Service{% endblock %}
 {% block intro %}
 {% endblock %}
@@ -23,16 +23,24 @@
   <div class="control-group">
     <label class="control-label" for="commit2">Diff Commit</label>
     <div class="controls">
-      <input name="commit2" placeholder="master" value="master" class="input-xlarge" required="true" type="text">
+      <input id="commit2" name="commit2" placeholder="master" class="input-xlarge" type="text">
       <p class="help-block">git commit reference</p>
+    </div>
+  </div>
+
+  <div class="control-group">
+    <label class="control-label" for="patch">Patch file</label>
+    <div class="controls">
+      <input id="patch" name="patch" class="input-xlarge" type="file">
+      <p class="help-block">Git Patch relative to the 'Base Commit' reference</p>
     </div>
   </div>
 
   <!-- Button -->
   <div class="control-group">
-    <label class="control-label" for="diff"></label>
     <div class="controls">
-      <button type="submit" data-toggle="modal" data-target="#myModal" class="btn btn-primary">Compare</button>
+      <button type="submit"class="btn btn-primary">Compare</button>
+      <!-- data-toggle="modal" data-target="#myModal" -->
     </div>
   </div>
 

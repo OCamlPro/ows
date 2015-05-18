@@ -191,9 +191,9 @@ def run(commit1,commit2) :
     return d
 
 def patch(commit,patchfile):
-    newbranch=str(uuid.uuid1())
+    newbranch="ows-travis-branch"
 
-    repo = git.Repo(owsdiff.OPAMREPO)
+    repo = git.Repo(OPAMREPO)
     repo.git.reset('--hard')
     repo.git.clean('-xdf')
 #    repo.remotes.origin.fetch()
@@ -204,7 +204,7 @@ def patch(commit,patchfile):
     repo.git.apply(patchfile)
     repo.index.commit("travis")
 
-    diff = owsdiff.run(commit,str(repo.commit()))
+    diff = run(commit,str(repo.commit()))
 
     repo.git.reset('--hard')
     repo.git.clean('-xdf')

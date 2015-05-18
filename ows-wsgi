@@ -55,12 +55,14 @@ def submit():
     if patch :
         (fid,patchfile) = tempfile.mkstemp('ows-wsgi')
         with open(patchfile, 'w') as open_file:
-            open_file.write(upload.file.read())
+            open_file.write(patch.file.read())
         open_file.close()
         diff = owsdiff.patch(commit1,patchfile)
         os.remove(patchfile)
-    else :
+    elif commit2 :
         diff = owsdiff.run(commit1,commit2)
+    else :
+        diff = []
  
     template = j2_env.get_template('templates/compare/modal.html')
     output = template.render({'report' : diff, 'commit1' : commit1, 'commit2' : commit2, 'baseurl' : BASEURL})
