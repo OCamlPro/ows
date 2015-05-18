@@ -24,7 +24,7 @@ import json
 import pydot
 
 import feedgenerator
-from email.utils import parseaddr
+from email.utils import parseaddr, formatdate
 
 import matplotlib
 matplotlib.use('Agg') 
@@ -41,10 +41,11 @@ from collections import OrderedDict
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, FileSystemBytecodeCache
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-j2_env = Environment(loader=FileSystemLoader(THIS_DIR),trim_blocks=True)
+bcc = FileSystemBytecodeCache('/tmp/jinja_cache', '%s.cache')
+j2_env = Environment(loader=FileSystemLoader(THIS_DIR),trim_blocks=True,bytecode_cache=bcc,cache_size=100)
 datefmt = "%a %b %d %H:%M:%S %Z %Y"
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -78,7 +79,6 @@ def parse(f):
         d['broken_packages'] = int(data['broken_packages'])
         d['total_packages'] = int(data['total_packages'])
         d['switch'] = data['ocaml_switch']
-        d['date'] = data['git_date']
         d['date'] = dt.datetime.strptime(data['git_date'],datefmt)
         d['commit'] = data['git_commit']
         d['title'] = data['git_title']
@@ -285,15 +285,31 @@ def html_weather(options,aggregatereport,summaryreport,switches):
     print "Compiling Weather Page"
     print "Compiling SVG files..."
     print "Compiling modal overlays..."
-    print "Compiling package pages..."
+    print "Compiling standalone packages' pages..."
     for name,versions in aggregatereport.iteritems() :
         templatemodal = j2_env.get_template('templates/packagemodal.html')
-        output = templatemodal.render({'name' : name, 'versions' : versions, 'switches': switches, 'date' : summaryreport['date'], 'baseurl' : options['baseurl']})
+        output = templatemodal.render({
+            'name' : name,
+            'versions' : versions,
+            'switches': switches,
+            'date' : summaryreport['date'],
+            'shortdate' : summaryreport['date'].strftime("%Y-%m-%d"),
+            'commit' : summaryreport['commit'],
+         #   'maintainer' : summaryreport['maintainer'],
+            'baseurl' : options['baseurl']})
         fname = os.path.join(options['dirname'],"packages",name+"-modal.html")
         save_page(output,fname)
 
         templatepage = j2_env.get_template('templates/packagepage.html')
-        output = templatepage.render({'name' : name, 'versions' : versions, 'switches': switches, 'date' : summaryreport['date'], 'baseurl' : options['baseurl']})
+        output = templatepage.render({
+            'name' : name, 
+            'versions' : versions, 
+            'switches': switches, 
+            'date' : summaryreport['date'], 
+            'shortdate' : summaryreport['date'].strftime("%Y-%m-%d"),
+            'commit' : summaryreport['commit'],
+          #  'maintainer' : summaryreport['maintainer'],
+            'baseurl' : options['baseurl']})
         fname = os.path.join(options['dirname'],"packages",name+"-page.html")
         save_page(output,fname)
 
@@ -329,20 +345,16 @@ def rss_weather(options,history,summaryreport):
                     for switch,l in groupby(bymaintainer[maintainer],key=lambda x : x[0]):
                         description.append((switch,map(lambda x:x[1],l)))
                     items.append({
-                        'title' : "Status %s" % date,
-                        'date' : date, 
+                        'date' : formatdate(float(date.strftime('%s'))),
+                        'shortdate' : date.strftime("%Y-%m-%d"),
+                        'commit' : commit,
                         'description' : description,
                         'link' : options['baseurl'] })
-
-#        for switch,l in groupby(packages,key=lambda x : x[0]):
-#            description.append((switch,map(lambda x:x[1],l)))
-#        items.append({ 'title' : "Latest Package Status", 'description' : description, 'date': None})
 
         output = template.render({
             'baseurl' : options['baseurl'],
             'maintainer' : maintainer,
-            'items' : items,
-            'commit' : commit })
+            'items' : items })
         fname = os.path.join(options['targetdir'],'rss','%s.rss' % maintainer)
         save_page(output,fname)
 
@@ -390,6 +402,8 @@ def html_summary(options,summaryreport,switches):
 def setup(summaryreport,switches,targetdir):
     shortdate = summaryreport['date'].strftime("%Y-%m-%d")
     dirname = os.path.join(targetdir,shortdate,summaryreport['commit'])
+    if not os.path.exists("/tmp/jinja_cache") :
+        os.makedirs("/tmp/jinja_cache")
     rss = os.path.join(targetdir,'rss')
     if not os.path.exists(rss) :
         os.makedirs(rss)
