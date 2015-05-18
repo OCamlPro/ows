@@ -23,7 +23,6 @@ import datetime as dt
 import json
 import pydot
 
-import feedgenerator
 from email.utils import parseaddr, formatdate
 
 import matplotlib
@@ -43,10 +42,21 @@ pp = pprint.PrettyPrinter(indent=4)
 
 from jinja2 import Environment, FileSystemLoader, FileSystemBytecodeCache
 
+import urllib
+from markupsafe import Markup
+
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 bcc = FileSystemBytecodeCache('/tmp/jinja_cache', '%s.cache')
 j2_env = Environment(loader=FileSystemLoader(THIS_DIR),trim_blocks=True,bytecode_cache=bcc,cache_size=100)
 datefmt = "%a %b %d %H:%M:%S %Z %Y"
+
+def urlencode_filter(s):
+    if type(s) == 'Markup':
+        s = s.unescape()
+    s = s.encode('utf8')
+    s = urllib.quote_plus(s)
+    return Markup(s)
+j2_env.filters['urlencode'] = urlencode_filter
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, o):
@@ -348,8 +358,7 @@ def rss_weather(options,history,summaryreport):
                         'date' : formatdate(float(date.strftime('%s'))),
                         'shortdate' : date.strftime("%Y-%m-%d"),
                         'commit' : commit,
-                        'description' : description,
-                        'link' : options['baseurl'] })
+                        'description' : description,})
 
         output = template.render({
             'baseurl' : options['baseurl'],
