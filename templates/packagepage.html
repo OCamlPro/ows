@@ -1,0 +1,11 @@
+{% extends "templates/page.html" %}
+{% block title %}Package overview {{ package }}{% endblock %}
+{% block intro %}
+<a href="http://{{ baseurl }}/rss/{{ maintaier }}.rss">RSS</a>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  {% include "templates/packageoverview.html" %}
+</div>
+{% endblock %}

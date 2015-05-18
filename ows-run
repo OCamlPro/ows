@@ -23,6 +23,9 @@ import datetime as dt
 import json
 import pydot
 
+import feedgenerator
+from email.utils import parseaddr
+
 import matplotlib
 matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
@@ -54,7 +57,6 @@ class DateTimeEncoder(json.JSONEncoder):
         except TypeError(msg) :
             pp.pprint(o)
             raise TypeError(msg)
-        pp.pprint(o)
         return r
 
 def versiontuple(v):
@@ -115,6 +117,7 @@ def plot(options,history):
 def aggregate(d):
     aggregatereport = {}
     aggregatesummary = { 'conflict' : {} , 'missing' : {} }
+    bymaintainer = {}
     summary = {}
     date,title,author,commit,totals = None,None,None,None,{}
     for report in d :
@@ -164,6 +167,9 @@ def aggregate(d):
                     indirect = False
                     dc,dm = [],[] # direct conflicts, direct missing
                     idc,idm = [], {} # indirect conflicts, indirect missing
+                    maintainer = parseaddr(package['maintainer'])
+                    key = maintainer[1] if maintainer[1] <> '' else maintainer[0]
+                    bymaintainer.setdefault(key,[(switch,package)]).append((switch,package))
                     if 'reasons' in package :
                         for p in package['reasons'] :
                             if 'missing' in p :
@@ -190,7 +196,7 @@ def aggregate(d):
                                     indirect = True
                                     idc.append(((p1,v1),(p2,v2)))
 
-                    p = (package['status'],(direct,indirect),dc,dm,idc,idm,r)
+                    p = (package['status'],(direct,indirect),dc,dm,idc,idm,r,package['maintainer'])
                     aggregatereport[name].setdefault(ver, { switch : p }).update({ switch : p })
 
     summaryreport = {
@@ -224,6 +230,7 @@ def aggregate(d):
             summaryreport['report'][name]['status'] = "partial"
 
     summaryreport['report'] = OrderedDict(sorted(summaryreport['report'].items(), key=lambda x : x[1]['percent'],reverse=True))
+    summaryreport['bymaintainer'] = bymaintainer
     summaryreport['summary']['missing'] = OrderedDict(sorted(summaryreport['summary']['missing'].items(), key=lambda x: x[1]['total'],reverse=True))
     summaryreport['summary']['conflict'] = OrderedDict(sorted(summaryreport['summary']['conflict'].items(), key=lambda x: x[1]['total'],reverse=True))
 
@@ -277,11 +284,19 @@ def html_howto(options,summaryreport,switches):
 def html_weather(options,aggregatereport,summaryreport,switches):
     print "Compiling Weather Page"
     print "Compiling SVG files..."
+    print "Compiling modal overlays..."
+    print "Compiling package pages..."
     for name,versions in aggregatereport.iteritems() :
-        template = j2_env.get_template('templates/package.html')
-        output = template.render({'name' : name, 'versions' : versions, 'switches': switches, 'date' : summaryreport['date'], 'baseurl' : options['baseurl']})
-        fname = os.path.join(options['dirname'],"packages",name+".html")
+        templatemodal = j2_env.get_template('templates/packagemodal.html')
+        output = templatemodal.render({'name' : name, 'versions' : versions, 'switches': switches, 'date' : summaryreport['date'], 'baseurl' : options['baseurl']})
+        fname = os.path.join(options['dirname'],"packages",name+"-modal.html")
         save_page(output,fname)
+
+        templatepage = j2_env.get_template('templates/packagepage.html')
+        output = templatepage.render({'name' : name, 'versions' : versions, 'switches': switches, 'date' : summaryreport['date'], 'baseurl' : options['baseurl']})
+        fname = os.path.join(options['dirname'],"packages",name+"-page.html")
+        save_page(output,fname)
+
         if not options['nosvg'] :
             for switch in switches :
                 for version,result in versions.iteritems() :
@@ -295,10 +310,42 @@ def html_weather(options,aggregatereport,summaryreport,switches):
     fname = os.path.join(options['dirname'],"index.html")
     save_page(output,fname)
 
+    #generated json output
     data = {'switches': switches, 'date' : summaryreport['date'], 'aggregatereport' : aggregatereport }
     json_string = json.dumps(data,cls=DateTimeEncoder,skipkeys=True,indent=4, separators=(',', ': '),sort_keys=True)
-    save_page(json_string,os.path.join(options['dirname'],"weather.json"))
- 
+    save_page(json_string,os.path.join(options['targetdir'],'json',"weather.json"))
+
+def rss_weather(options,history,summaryreport):
+    print "Generating RSS feed"
+    template = j2_env.get_template('templates/maintainerfeed.rss')
+    for maintainer,packages in summaryreport['bymaintainer'].iteritems() :
+        items = []
+        for date,hist in history :
+            if 'bymaintainer' in hist['summary'] :
+                bymaintainer = hist['summary']['bymaintainer']
+                commit = hist['summary']['commit']
+                if maintainer in bymaintainer :
+                    description = []
+                    for switch,l in groupby(bymaintainer[maintainer],key=lambda x : x[0]):
+                        description.append((switch,map(lambda x:x[1],l)))
+                    items.append({
+                        'title' : "Status %s" % date,
+                        'date' : date, 
+                        'description' : description,
+                        'link' : options['baseurl'] })
+
+#        for switch,l in groupby(packages,key=lambda x : x[0]):
+#            description.append((switch,map(lambda x:x[1],l)))
+#        items.append({ 'title' : "Latest Package Status", 'description' : description, 'date': None})
+
+        output = template.render({
+            'baseurl' : options['baseurl'],
+            'maintainer' : maintainer,
+            'items' : items,
+            'commit' : commit })
+        fname = os.path.join(options['targetdir'],'rss','%s.rss' % maintainer)
+        save_page(output,fname)
+
 def html_summary(options,summaryreport,switches):
     print "Compiling Summary Page"
     for t,s in summaryreport['summary'].iteritems() :
@@ -343,6 +390,12 @@ def html_summary(options,summaryreport,switches):
 def setup(summaryreport,switches,targetdir):
     shortdate = summaryreport['date'].strftime("%Y-%m-%d")
     dirname = os.path.join(targetdir,shortdate,summaryreport['commit'])
+    rss = os.path.join(targetdir,'rss')
+    if not os.path.exists(rss) :
+        os.makedirs(rss)
+    json = os.path.join(targetdir,'json')
+    if not os.path.exists(json) :
+        os.makedirs(json)
     if not os.path.exists(dirname) :
         os.makedirs(dirname)
     summary = os.path.join(dirname,'summary')
@@ -431,6 +484,7 @@ def main():
     (switches,ar,sr) = load_or_parse(args.reportdir[0],args.nocache)
     options = {
             'dirname' : setup(sr,switches,args.targetdir),
+            'targetdir' : args.targetdir,
             'baseurl' : args.baseurl ,
             'reportdir' : args.reportdir[0],
             'nosvg' : args.nosvg}
@@ -445,6 +499,7 @@ def main():
     html_howto(options,sr,switches)
     html_credits(options,sr)
     html_backlog(options,history[today-10:today-1][::-1],sr)
+    rss_weather(options,history[today-10:today-1][::-1],sr)
     save_history(args.history,h,sr,switches)
     plot(options,history[:today])
 

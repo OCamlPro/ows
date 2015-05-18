@@ -1,0 +1,128 @@
+<div class="col-xs-1"> <!-- required for floating -->
+	<!-- Nav tabs -->
+	<ul class="nav nav-tabs tabs-left sideways" id="modal-tab">
+	  <li class="active"><a href="#overview" data-toggle="tab">Overview</a></li>
+	  <li>Details</li>
+	  <li>Graph</li>
+	</ul>
+</div>
+
+<div class="col-xs-11">
+  <div class="tab-content">
+	<div class="tab-pane active" id="overview">
+	  <table id="modal-table" class="display" cellspacing="0" width="100%">
+		<thead>
+		  <tr><th>version</th>{% for s in switches %}<th>{{s}}</th>{% endfor %}</tr>
+		</thead>
+		<tbody>
+		{% for version, result in versions.iteritems() %}
+		<tr>
+		  <td>{{version}}</a></td>
+		  {% for switch in switches %}
+			<td>
+			  {% if result[switch] is defined %}
+				{% if result[switch][0] == 'broken' %}
+				  <span style="color:red"
+						title="This package is unusable with OCaml {{switch}}">
+					<span class="glyphicon glyphicon-remove"></span>
+				  </span>
+				  <a class="btn btn-xs reasons" href="#p{{version|replace(".","_")}}_{{switch|replace(".","_")}}"
+					 title="Fix It !">
+					<span class="glyphicon glyphicon-zoom-in"></span>
+				  </a>
+				  <a class="btn btn-xs graph" href="{{baseurl}}/{{date}}/{{commit}}/{{switch}}/{{name}}.{{version}}.svg"
+					 title="Explanation Graph">
+					<span class="glyphicon glyphicon-picture"></span>
+				  </a>
+				{% elif result[switch][0] == 'ok' %}
+				  <span style="color:green">
+					<span class="glyphicon glyphicon-ok"></span>
+				  </span>
+				{% endif %}
+			  {% else %}
+				  <span class="glyphicon glyphicon-option-horizontal"
+						title="Version {{version}} is not available for OCaml {{switch}}"></span>
+			  {% endif %}
+			</td>
+		  {% endfor %}
+		</tr>
+		{% endfor %}
+		</tbody>
+	  </table>
+	</div>
+  </div>
+  <div class="tab-pane" id="details">
+	{% for version,result in versions.iteritems() %}
+	  {% for switch in switches %}
+		{% if result[switch] is defined %}
+		  {% if result[switch][0] == 'broken' %}
+			<div id="p{{version|replace(".","_")}}_{{switch|replace(".","_")}}" class="collapse">
+			  {% set (direct,indirect) = result[switch][1] %}
+			  {% set dc = result[switch][2] %}
+			  {% set dm = result[switch][3] %}
+			  {% set idc = result[switch][4] %}
+			  {% set idm = result[switch][5] %}
+			  {% set reasons = result[switch][6] %}
+			  {% if dc|length > 0 or dm|length > 0 %}
+			  <p>This package requires manual intervention because
+				 {% if dm|length > 0 %} some dependencies cannot be satisifed{% endif %}
+				 {% if dm|length > 0 and dc|length > 0 %} and {% endif %}
+				 {% if dc|length > 0 %} it is in conflict with other packages. {% endif %}
+				 {% if dm|length > 0 %}
+				 <p><ul>
+				   {% for dep in dm %}
+					 <li>This dependency {{ dep }} cannot be satisfied</li>
+				   {% endfor %}
+				 </ul></p>
+				 {% endif %}
+				 {% if dc|length > 0 %} it is in conflict with other packages :
+				 <p><ul>
+				   {% for ((p1,v1),(p2,v2)) in dc %}
+				   <li>These packages are in conflict : 
+					 <a href="{{baseurl}}/{{date}}/{{commit}}/packages/{{p1}}.html" class="package-backlink">{{ p1 }}</a>
+					 (= <a href="{{baseurl}}/{{date}}/{{commit}}/packages/{{p1}}.html" version="{{v1|replace(".","_")}}" class="version-backlink">{{ v1 }}</a>) 
+					 (<a href="{{baseurl}}/{{date}}/{{commit}}/packages/{{p2}}.html" class="package-backlink">{{ p2 }}</a>
+					 (= <a href="{{baseurl}}/{{date}}/{{commit}}/packages/{{p2}}.html" version="{{v2|replace(".","_")}}" class="version-backlink">{{ v2 }}</a>) </li>
+				   {% endfor %}
+				 </ul></p>
+				 {% endif %}
+			  </p>
+			  {% endif %}
+			  {% if idc|length > 0 or idm|length > 0 %}
+				<p>This package cannot be use with OCaml {{switch}} because package(s)
+				   {% for pkg,verlist in idm.iteritems() %}
+				   <a href="{{baseurl}}/{{date}}/{{commit}}/packages/{{pkg}}.html" class="package-backlink">{{ pkg }}</a> (versions :
+					  {% for v in verlist %}
+					  <a href="{{baseurl}}/{{date}}/{{commit}}/packages/{{pkg}}.html" version="{{v|replace(".","_")}}" class="version-backlink">{{ v }}</a>
+						{% if not loop.last %},{% endif %}
+					  {% endfor %}
+					).
+				   {% endfor %}
+				   <p><ul>
+					 {% for ((p1,v1),(p2,v2)) in idc %}
+					 <li>These packages are in conflict : 
+					   <a href="{{baseurl}}/{{date}}/{{commit}}/packages/{{p1}}.html" class="package-backlink">{{ p1 }}</a>
+					   (= <a href="{{baseurl}}/{{date}}/{{commit}}/packages/{{p1}}.html" version="{{v1|replace(".","_")}}" class="version-backlink">{{ v1 }}</a>) 
+					   (<a href="{{baseurl}}/{{date}}/{{commit}}/packages/{{p2}}.html" version="{{v2|replace(".","_")}}" class="package-backlink">{{ p2 }}</a>
+					   (= <a href="{{baseurl}}/{{date}}/{{commit}}/packages/{{p2}}.html" version="{{v2|replace(".","_")}}" class="version-backlink">{{ v2 }}</a>) </li>
+					 {% endfor %}
+				   </ul></p>
+				   ,that is/are an indirect dependency of {{ name }}, is/are broken.
+					<p>Possible solutions are :</p>
+					<ol>
+					  <li>Contact the maintainer of the package(s) {{ idm.keys()|join(', ') }} or propose a patch.</li>
+					  <li>Change/Amend the dependencies of this package.</li>
+					  <li>Declare this package not available for OCaml {{ switch }}.</li>
+					</ol>
+				</p>
+			  {% endif %}
+			</div>
+		  {% endif %}
+		{% endif %}
+	  {% endfor %}
+	{% endfor %}
+  </div>
+  <div class="tab-pane" id="graph">
+	<div id="svgfile" class="collapse"></div>
+  </div>
+</div>

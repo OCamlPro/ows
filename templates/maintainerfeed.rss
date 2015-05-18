@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <channel>
+  <title>Maintainer Status Board {{ maintainer }}</title>
+  <link>{{ baseurl }}</link>
+  <description></description>
+  <language>en</language>
+  <lastBuildDate>{{ today }}</lastBuildDate>
+  <items></items>
+  </channel>
+  {% for item in items %}
+  <item>
+    <title>{{ item['title'] }}</title>
+    <link></link>
+    <pubDate>{{ item['date'] }}</pubDate>
+    <description>
+      <![CDATA[ 
+      {% for (switch,l) in item['description'] %}
+      <h3>{{ switch }}</h3>
+      <ol>
+        {% for p in l %}
+        <li>
+          <a href="{{baseurl}}/{{date}}/{{commit}}/packages/{{p['package']}}-page.html" >{{ p['package'] }}</a> 
+          {{ p['version'] }} : {{ p['status'] }}</li>
+        {% endfor %}
+      </ol>
+      {% endfor %}
+      ]]>
+    </description>
+  </item>
+  {% endfor %}
+</rdf:RDF>
