@@ -18,8 +18,12 @@ fi
 
 ######################################################################
 
-#origin=$(/bin/date --date "10 days ago" +%Y-%m-%d)
-origin=$(/bin/date +%Y-%m-%d)
+daysago=${1:-"0"}
+if [ $daysago == "0" ]; then
+  origin=$(/bin/date +%Y-%m-%d)
+else
+  origin=$(/bin/date --date "$daysago days ago" +%Y-%m-%d)
+fi
 currentdate=$(/bin/date +%Y-%m-%d)
 
 function daterange {
@@ -34,14 +38,21 @@ function daterange {
 }
 range=$(daterange ${origin} ${currentdate})
 
-${OWSUPDATE} -t
+NOCACHE=
+if [ $daysago == "0" ]; then
+  ${OWSUPDATE} -t
+else
+  ${OWSUPDATE} -f $origin
+  NOCACHE="--nocache"
+fi
+
 export REPORTDIR=$REPORTDIR
 
 for date in $range; do
   if [ -d ${REPORTDIR}/$date ]; then
     for i in `ls -d ${REPORTDIR}/$date/*`; do
       if [ -d $i ]; then
-        ${OWSRUN} --targetdir ${TARGETDIR} --baseurl ${BASEURL} --history ${REPORTDIR}/history.pickle $i
+        ${OWSRUN} ${NOCACHE} --targetdir ${TARGETDIR} --baseurl ${BASEURL} --history ${REPORTDIR}/history.pickle $i
       else
         echo "Nothing interesting in $i"
       fi
