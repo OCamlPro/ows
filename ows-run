@@ -177,8 +177,12 @@ def aggregate(d):
                     indirect = False
                     dc,dm = [],[] # direct conflicts, direct missing
                     idc,idm = [], {} # indirect conflicts, indirect missing
-                    maintainer = parseaddr(package['maintainer'])
-                    key = maintainer[1] if maintainer[1] <> '' else maintainer[0]
+                    if 'maintainer' in package :
+                        maintainer = parseaddr(package['maintainer'])
+                    else :
+                        print "Warning : Orphaned package %s %s" % (name,package['version'])
+                        maintainer = "orphan"
+                    key = maintainer[1] if maintainer[1] <> '' else urlencode_filter(maintainer[0])
                     bymaintainer.setdefault(key,[(switch,package)]).append((switch,package))
                     if 'reasons' in package :
                         for p in package['reasons'] :
@@ -305,7 +309,6 @@ def html_weather(options,aggregatereport,summaryreport,switches):
             'date' : summaryreport['date'],
             'shortdate' : summaryreport['date'].strftime("%Y-%m-%d"),
             'commit' : summaryreport['commit'],
-         #   'maintainer' : summaryreport['maintainer'],
             'baseurl' : options['baseurl']})
         fname = os.path.join(options['dirname'],"packages",name+"-modal.html")
         save_page(output,fname)
@@ -318,7 +321,6 @@ def html_weather(options,aggregatereport,summaryreport,switches):
             'date' : summaryreport['date'], 
             'shortdate' : summaryreport['date'].strftime("%Y-%m-%d"),
             'commit' : summaryreport['commit'],
-          #  'maintainer' : summaryreport['maintainer'],
             'baseurl' : options['baseurl']})
         fname = os.path.join(options['dirname'],"packages",name+"-page.html")
         save_page(output,fname)
