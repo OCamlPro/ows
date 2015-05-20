@@ -7,6 +7,12 @@ except ImportError:
     from yaml import BaseLoader as yamlLoader
     warning('YAML C-library not available, falling back to python')
 
+try :
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    warning('Pickle C-library not available, falling back to python')
+
 import os.path
 from codecs import open
 import fnmatch
@@ -14,6 +20,7 @@ import os, signal, sys
 import argparse
 import datetime as dt
 import time
+import shutil
 
 from subprocess import Popen, PIPE, STDOUT
 from itertools import groupby, izip_longest
@@ -33,6 +40,7 @@ import os, pwd
 os.getlogin = lambda: pwd.getpwuid(os.getuid())[0]
 
 import git, os, shutil
+from git.exc import GitCommandError
 
 # Ocaml Releases (add here a new one)
 VERSIONS="3.12.1 4.00.1 4.01.0 4.02.0 4.02.1"
@@ -40,52 +48,57 @@ DISTCHECK="/home/ows/dose/distcheck.native"
 OPAM="/home/ows/opam/src/opam"
 OPAMREPO="/srv/data/ows/repository/opam-repository"
 OPAMROOT="/srv/data/ows/repository/opam-root"
+OWSCACHE="/srv/data/ows/cache"
 
-def runopam(switches,reportdir):
+def runopam(switches,reportdir,nocache=False):
     if not os.path.exists(reportdir) :
         os.makedirs(reportdir)
 
-    FNULL = open(os.devnull, 'w')
-    print "Update Opam"
-    cmd = [OPAM,'update','--quiet','--use-internal-solver']
-    proc = Popen(cmd,stdout=FNULL, stderr=STDOUT, env={'OPAMROOT' : OPAMROOT})
-    proc.communicate()
+    if not os.path.exists(reportdir) :
+        FNULL = open(os.devnull, 'w')
+        print "Update Opam"
+        cmd = [OPAM,'update','--quiet','--use-internal-solver']
+        proc = Popen(cmd,stdout=FNULL, stderr=STDOUT, env={'OPAMROOT' : OPAMROOT})
+        proc.communicate()
+    else :
+        print "Skip Opam update. Using cache"
 
     for switch in switches :
         print "Switch %s" % switch
 
-        outfile=os.path.join(reportdir,"report.pef")
-        print "Saving pef in %s" % outfile
-        cmd = [OPAM,'config','pef-universe','--quiet','--use-internal-solver','--switch',switch]
+        outfile=os.path.join(reportdir,"report-%s.pef"  % switch)
+        if not os.path.exists(outfile) :
+            print "Saving pef in %s" % outfile
+            cmd = [OPAM,'config','pef-universe','--quiet','--use-internal-solver','--switch',switch]
 
-        with open(outfile,'w') as f :
-            proc = Popen(cmd,stdout=f,env={'OPAMROOT' : OPAMROOT})
-            proc.communicate()
-            f.close()
+            with open(outfile,'w') as f :
+                proc = Popen(cmd,stdout=f,env={'OPAMROOT' : OPAMROOT})
+                proc.communicate()
+                f.close()
+        else :
+            print "Using Cache report-%s.pef"  % switch
 
         inputfile = outfile
         outfile=os.path.join(reportdir,"report-%s.yaml" % switch)
-        print "Running Distcheck %s" % outfile
-        cmd = [DISTCHECK,'-f','-s','-tpef', inputfile]
-        with open(outfile,'wa+') as f :
-            f.write("ocaml_switch: %s\n" % switch)
-            f.flush()
+        if not os.path.exists(outfile) :
+            print "Running Distcheck %s" % outfile
+            cmd = [DISTCHECK,'-f','-s','-tpef', inputfile]
+            with open(outfile,'wa+') as f :
+                f.write("ocaml_switch: %s\n" % switch)
+                f.flush()
 
-            proc = Popen(cmd,stdout=f)
-            proc.communicate()
-            f.close()
+                proc = Popen(cmd,stdout=f)
+                proc.communicate()
+                f.close()
+        else :
+            print "Using Cache report-%s.yaml"  % switch
 
 def replay(commit) : 
     print "Fetch Commit %s" % commit
     repo = git.Repo(OPAMREPO)
     repo.git.reset('--hard')
     repo.git.clean('-xdf')
-#    repo.remotes.origin.fetch()
     repo.git.checkout(commit)
-#    repo.git.reset('--hard',commit)
-#    repo.git.clean('-xdf')
-
-    print list(repo.iter_commits())[0]
 
 def parse(f):
     data = yaml.load(f, Loader=yamlLoader)
@@ -113,7 +126,7 @@ def makeset(r):
 
     return (ok,broken)
 
-def load_and_parse(reportdir,commit1,commit2):
+def load_and_parse(reportdir,commit1,commit2,nocache=False):
     def get(path) :
         report = []
         for root, dirs, files in os.walk(path, topdown=False):
@@ -126,10 +139,31 @@ def load_and_parse(reportdir,commit1,commit2):
                         report.append(r)
                     dataset.close()
         return report
-    r1 = get(os.path.join(reportdir,commit1))
-    r2 = get(os.path.join(reportdir,commit2))
-    ro1 = sorted(r1,key=lambda r: r['switch'])
-    ro2 = sorted(r2,key=lambda r: r['switch'])
+
+    def run(reportdir, nocache=False) :
+        picklefile = os.path.join(reportdir,'data.pickle')
+        print picklefile
+        if not os.path.exists(reportdir) :
+            os.makedirs(reportdir)
+#        if nocache and os.path.exists(picklefile) :
+#            os.remove(picklefile)
+
+        if os.path.exists(picklefile) :
+            print "Load Cache %s" % picklefile
+            with open(picklefile,'r') as f :
+                ro = pickle.load(f)
+        else :
+            ro = sorted(get(reportdir),key=lambda r: r['switch'])
+            s = signal.signal(signal.SIGINT, signal.SIG_IGN)
+            with open(picklefile,'wb') as f :
+                pickle.dump(ro,f)
+                f.close()
+            signal.signal(signal.SIGINT, s)
+        return ro
+
+    ro1 = run(os.path.join(reportdir,commit1))
+    ro2 = run(os.path.join(reportdir,commit2))
+
     return (zip(ro1,ro2))
 
 def printset(commit,d) :
@@ -184,6 +218,7 @@ def compare(reportdir,commit1,commit2) :
 def run(commit1,commit2) :
 
     reportdir = tempfile.mkdtemp('ows-diff')
+    reportdir = OWSCACHE
     switches=VERSIONS.split()
 
     replay(commit1)
@@ -202,11 +237,11 @@ def patch(commit,patchfile):
     repo = git.Repo(OPAMREPO)
     repo.git.reset('--hard')
     repo.git.clean('-xdf')
-#    repo.remotes.origin.fetch()
+    repo.remotes.origin.fetch()
     repo.git.checkout('master')
     try :
         repo.git.branch('-D',newbranch)
-    except :
+    except GitCommandError :
         pass
 
     repo.git.checkout(commit,b=newbranch)
@@ -216,6 +251,10 @@ def patch(commit,patchfile):
     repo.index.commit("travis")
 
     diff = run(commit,str(repo.commit()))
+
+    d = os.path.join(OWSCACHE,str(repo.commit()))
+    if os.path.exists(d) :
+        shutil.rmtree(d)
 
     repo.git.reset('--hard')
     repo.git.clean('-xdf')
