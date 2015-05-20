@@ -9,6 +9,7 @@ from bottle import get, post, request, response, static_file
 import json
 import base64
 import git
+from git.exc import GitCommandError
 import uuid
 import tempfile
 import owsdiff
@@ -36,6 +37,7 @@ def submit():
     commit2 = None
     patch = None
     diff = []
+    error = None
     if 'commit1' in request.forms :
         commit1 = request.forms.get('commit1')
     if 'commit2' in request.forms :
@@ -50,13 +52,19 @@ def submit():
         with open(patchfile, 'w') as open_file:
             open_file.write(patch.file.read())
         open_file.close()
-        diff = owsdiff.patch(commit1,patchfile)
+        try :
+            diff = owsdiff.patch(commit1,patchfile)
+        except :
+            error = "Apply Patch Failed"
         os.remove(patchfile)
     elif commit2 :
-        diff = owsdiff.run(commit1,commit2)
+        try :
+            diff = owsdiff.run(commit1,commit2)
+        except :
+            error = "Checkout commit Failed"
  
     template = j2_env.get_template('templates/compare/modal.html')
-    output = template.render({'report' : diff, 'commit1' : commit1, 'commit2' : commit2, 'baseurl' : BASEURL})
+    output = template.render({'report' : diff, 'error' : error, 'commit1' : commit1, 'commit2' : commit2, 'baseurl' : BASEURL})
     return output
 
 @app.post('/compare/api')
@@ -65,6 +73,8 @@ def jsondiff():
     commit2 = None
     patch = None
     diff = []
+    status = "success"
+    message = ""
     if 'commit1' in request.json :
         commit1 = request.json['commit1']
     if 'commit2' in request.json :
@@ -77,15 +87,22 @@ def jsondiff():
         with open(patchfile, 'w') as open_file:
             open_file.write(base64.b64decode(patch))
         open_file.close()
-        diff = owsdiff.patch(commit1,patchfile)
+        try :
+            diff = owsdiff.patch(commit1,patchfile)
+        except : 
+            status = "fail"
+            message = "Apply Patch Failed" # : %s %s" % (command,stderr_value)
+
         os.remove(patchfile)
     elif commit2 :
-        diff = owsdiff.run(commit1,commit2)
-
-    print diff
+        try :
+            diff = owsdiff.run(commit1,commit2)
+        except :
+            status = "fail"
+            message = "Checkout commit Failed"
 
     response.content_type = 'application/json'
-    return json.dumps(diff)
+    return json.dumps({ 'status' : status, 'message' : message, 'result' : diff})
 
 class StripPathMiddleware(object):
     '''

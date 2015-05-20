@@ -4,36 +4,41 @@
 </div>
 
 <div class="modal-body">
-{% for (new,rem,fixed,broken,switch) in report %}
-  {% if new|length >= 1 %} 
-	<h3>OCaml {{ switch }}</h3>
-	<p>
-	The following packages are <strong>NEW</strong> :
-	{% for (p,v) in new %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
-	</p>
-  {% endif %}
+{% if error %}
+<p>Something went wrong : <strong>{{ error }}</strong></p>
+<p>Please check that the git references or if the given patch cleanly applies to {{ commit1 }}</p>
+{% else %}
+  {% for (new,rem,fixed,broken,switch) in report %}
+	{% if new|length >= 1 %} 
+	  <h3>OCaml {{ switch }}</h3>
+	  <p>
+	  The following packages are <strong>NEW</strong> :
+	  {% for (p,v) in new %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
+	  </p>
+	{% endif %}
 
-  {% if rem|length >= 1 %} 
-	<p>
-	The following packages were <strong>REMOVED</strong> :
-	{% for (p,v) in rem %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
-	</p>
-  {% endif %}
+	{% if rem|length >= 1 %} 
+	  <p>
+	  The following packages were <strong>REMOVED</strong> :
+	  {% for (p,v) in rem %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
+	  </p>
+	{% endif %}
 
-  {% if fixed|length >= 1 %} 
-	<p>
-	The following packages are now <strong>FIXED</strong> :
-	{% for (p,v) in fixed %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
-	</p>
-  {% endif %}
+	{% if fixed|length >= 1 %} 
+	  <p>
+	  The following packages are now <strong>FIXED</strong> :
+	  {% for (p,v) in fixed %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
+	  </p>
+	{% endif %}
 
-  {% if broken|length >= 1 %} 
-	<p>
-	The following packages are now <strong>BROKEN</strong> :
-	{% for (p,v) in broken %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
-	</p>
-  {% endif %}
-{% endfor %}
+	{% if broken|length >= 1 %} 
+	  <p>
+	  The following packages are now <strong>BROKEN</strong> :
+	  {% for (p,v) in broken %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
+	  </p>
+	{% endif %}
+  {% endfor %}
+{% endif %}
 </div>
   	
 <div class="modal-footer">

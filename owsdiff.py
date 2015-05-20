@@ -171,9 +171,13 @@ def compare(reportdir,commit1,commit2) :
         fixed = [p for p in br1 if p in ok2]
         broken = [p for p in br2 if p in ok1]
 
-        d.append((new,rem,fixed,broken,r1['switch']))
-
-    pp.pprint(d)
+        d.append({ 
+            'new' : new, 
+            'rem' : rem, 
+            'fixed' : fixed, 
+            'broken' : broken, 
+            'switch' : r1['switch']
+        })
 
     return d
 
@@ -200,7 +204,10 @@ def patch(commit,patchfile):
     repo.git.clean('-xdf')
 #    repo.remotes.origin.fetch()
     repo.git.checkout('master')
-#    repo.git.branch('-D',newbranch)
+    try :
+        repo.git.branch('-D',newbranch)
+    except :
+        pass
 
     repo.git.checkout(commit,b=newbranch)
     repo.git.reset('--hard')
