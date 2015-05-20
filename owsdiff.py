@@ -29,14 +29,17 @@ datefmt = "%a %b %d %H:%M:%S %Z %Y"
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
+import os, pwd
+os.getlogin = lambda: pwd.getpwuid(os.getuid())[0]
+
 import git, os, shutil
 
 # Ocaml Releases (add here a new one)
 VERSIONS="3.12.1 4.00.1 4.01.0 4.02.0 4.02.1"
-DISTCHECK="/home/abate/Projects/repos/mancoosi-tools/dose/dose-distcheck"
-OPAM="/home/abate/Projects/repos/opam/src/opam"
-OPAMREPO="/home/abate/Projects/repos/ows/repository/opam-repository"
-OPAMROOT="/home/abate/Projects/repos/ows/repository/opam-root"
+DISTCHECK="/home/ows/dose/distcheck.native"
+OPAM="/home/ows/opam/src/opam"
+OPAMREPO="/srv/data/ows/repository/opam-repository"
+OPAMROOT="/srv/data/ows/repository/opam-root"
 
 def runopam(switches,reportdir):
     if not os.path.exists(reportdir) :
@@ -180,8 +183,6 @@ def run(commit1,commit2) :
     switches=VERSIONS.split()
 
     replay(commit1)
-    print reportdir
-    print commit1
     runopam(switches,os.path.join(reportdir,commit1))
 
     replay(commit2)
@@ -192,11 +193,14 @@ def run(commit1,commit2) :
 
 def patch(commit,patchfile):
     newbranch="ows-travis-branch"
+    author=git.Actor("ows", "ows@irill.org")
 
     repo = git.Repo(OPAMREPO)
     repo.git.reset('--hard')
     repo.git.clean('-xdf')
 #    repo.remotes.origin.fetch()
+    repo.git.checkout('master')
+#    repo.git.branch('-D',newbranch)
 
     repo.git.checkout(commit,b=newbranch)
     repo.git.reset('--hard')

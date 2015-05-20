@@ -12,44 +12,37 @@ import git
 import uuid
 import tempfile
 import owsdiff
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, FileSystemBytecodeCache
 
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
-THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-j2_env = Environment(loader=FileSystemLoader(THIS_DIR),trim_blocks=True)
-BASEURL="http://localhost:8080"
-TARGETDIR=os.path.join(THIS_DIR,'html')
+TEMPLATES="/home/ows/ows"
+bcc = FileSystemBytecodeCache('/tmp/jinja_cache', '%s.cache')
+j2_env = Environment(loader=FileSystemLoader(TEMPLATES),trim_blocks=True,bytecode_cache=bcc,cache_size=100)
+BASEURL="http://ows.irill.org"
 
-# Static Routes
-@get('/<filename:re:.*\.js>')
-def javascripts(filename):
-    return static_file(filename, root=os.path.join(THIS_DIR,'html'))
+app = application = Bottle()
 
-@get('/<filename:re:.*\.css>')
-def stylesheets(filename):
-    return static_file(filename, root=os.path.join(THIS_DIR,'html'))
-
-@get('/<filename:re:.*\.(jpg|png|gif|ico)>')
-def images(filename):
-    return static_file(filename, root=os.path.join(THIS_DIR,'html'))
-
-@get('/<filename:re:.*\.(eot|ttf|woff|svg)>')
-def fonts(filename):
-    return static_file(filename, root=os.path.join(THIS_DIR,'html'))
-
-@get('/compare/form')
+@app.get('/compare/form')
 def form():
     template = j2_env.get_template('templates/compare/form.html')
     output = template.render({'baseurl' : BASEURL})
     return output
 
-@post('/compare/submit')
+@app.post('/compare/submit')
 def submit():
-    commit1 = request.forms.get('commit1')
-    commit2 = request.forms.get('commit2')
-    patch = request.files.get('patch')
+    commit1 = None
+    commit2 = None
+    patch = None
+    diff = []
+    if 'commit1' in request.forms :
+        commit1 = request.forms.get('commit1')
+    if 'commit2' in request.forms :
+        commit2 = request.forms.get('commit2')
+    if 'patch' in request.forms :
+        patch = request.files.get('patch')
+    print "diff %s %s %s" % (commit1,commit2,patch)
     pp.pprint(request.forms.items())
 
     if patch :
@@ -61,36 +54,51 @@ def submit():
         os.remove(patchfile)
     elif commit2 :
         diff = owsdiff.run(commit1,commit2)
-    else :
-        diff = []
  
     template = j2_env.get_template('templates/compare/modal.html')
     output = template.render({'report' : diff, 'commit1' : commit1, 'commit2' : commit2, 'baseurl' : BASEURL})
     return output
 
-@get('/compare/<commit1>/<commit2>')
-def htmldiff(commit1,commit2):
-    diff = owsdiff.run(commit1,commit2)
-    template = j2_env.get_template('templates/compare/static.html')
-    output = template.render({'report' : diff, 'commit1' : commit1, 'commit2' : commit2, 'baseurl' : BASEURL})
-    return output
-
-@post('/compare/api/compare')
+@app.post('/compare/api')
 def jsondiff():
-    commit = request.json['commit']
-    patch = request.json['patch']
+    commit1 = None
+    commit2 = None
+    patch = None
+    diff = []
+    if 'commit1' in request.json :
+        commit1 = request.json['commit1']
+    if 'commit2' in request.json :
+        commit2 = request.json['commit2']
+    if 'patch' in request.json :
+        patch = request.json['patch']
 
-    (fid,patchfile) = tempfile.mkstemp('ows-wsgi')
-    with open(patchfile,'w') as f :
-        f.write(base64.b64decode(patch))
-        f.close
+    if patch :
+        (fid,patchfile) = tempfile.mkstemp('ows-wsgi')
+        with open(patchfile, 'w') as open_file:
+            open_file.write(base64.b64decode(patch))
+        open_file.close()
+        diff = owsdiff.patch(commit1,patchfile)
+        os.remove(patchfile)
+    elif commit2 :
+        diff = owsdiff.run(commit1,commit2)
 
-    diff = run(commit,patchfile)
-
-    os.remove(patchfile)
+    print diff
 
     response.content_type = 'application/json'
-    return diff
+    return json.dumps(diff)
 
-run(host='localhost', port=8080)
+class StripPathMiddleware(object):
+    '''
+    Get that slash out of the request
+    '''
+    def __init__(self, a):
+        self.a = a
+    def __call__(self, e, h):
+        e['PATH_INFO'] = e['PATH_INFO'].rstrip('/')
+        return self.a(e, h)
 
+if __name__ == '__main__':
+    run(app=StripPathMiddleware(app),
+        server='python_server',
+        host='0.0.0.0',
+        port=8080)
