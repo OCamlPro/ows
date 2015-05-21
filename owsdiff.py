@@ -50,11 +50,14 @@ OPAMREPO="/srv/data/ows/repository/opam-repository"
 OPAMROOT="/srv/data/ows/repository/opam-root"
 OWSCACHE="/srv/data/ows/cache"
 
-def runopam(switches,reportdir,nocache=False):
+def runopam(switches,reportdir,nocache):
+    if nocache and os.path.exists(reportdir) :
+        shutil.rmtree(reportdir)
+
     if not os.path.exists(reportdir) :
         os.makedirs(reportdir)
 
-    if not os.path.exists(reportdir) :
+    if nocache or not os.path.exists(reportdir) :
         FNULL = open(os.devnull, 'w')
         print "Update Opam"
         cmd = [OPAM,'update','--quiet','--use-internal-solver']
@@ -67,7 +70,7 @@ def runopam(switches,reportdir,nocache=False):
         print "Switch %s" % switch
 
         outfile=os.path.join(reportdir,"report-%s.pef"  % switch)
-        if not os.path.exists(outfile) :
+        if nocache or not os.path.exists(outfile) :
             print "Saving pef in %s" % outfile
             cmd = [OPAM,'config','pef-universe','--quiet','--use-internal-solver','--switch',switch]
 
@@ -80,7 +83,7 @@ def runopam(switches,reportdir,nocache=False):
 
         inputfile = outfile
         outfile=os.path.join(reportdir,"report-%s.yaml" % switch)
-        if not os.path.exists(outfile) :
+        if nocache or not os.path.exists(outfile) :
             print "Running Distcheck %s" % outfile
             cmd = [DISTCHECK,'-f','-s','-tpef', inputfile]
             with open(outfile,'wa+') as f :
@@ -126,7 +129,7 @@ def makeset(r):
 
     return (ok,broken)
 
-def load_and_parse(reportdir,commit1,commit2,nocache=False):
+def load_and_parse(reportdir,commit1,commit2,nocache):
     def get(path) :
         report = []
         for root, dirs, files in os.walk(path, topdown=False):
@@ -140,18 +143,18 @@ def load_and_parse(reportdir,commit1,commit2,nocache=False):
                     dataset.close()
         return report
 
-    def run(reportdir, nocache=False) :
+    def run(reportdir, nocache) :
         picklefile = os.path.join(reportdir,'data.pickle')
-        print picklefile
+        print "Load and Parse : %s" % reportdir
         if not os.path.exists(reportdir) :
             os.makedirs(reportdir)
-#        if nocache and os.path.exists(picklefile) :
-#            os.remove(picklefile)
+        if nocache and os.path.exists(picklefile) :
+            os.remove(picklefile)
 
         if os.path.exists(picklefile) :
             print "Load Cache %s" % picklefile
             with open(picklefile,'r') as f :
-                ro = pickle.load(f)
+                ro = sorted(pickle.load(f),key=lambda r: r['switch'])
         else :
             ro = sorted(get(reportdir),key=lambda r: r['switch'])
             s = signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -161,41 +164,41 @@ def load_and_parse(reportdir,commit1,commit2,nocache=False):
             signal.signal(signal.SIGINT, s)
         return ro
 
-    ro1 = run(os.path.join(reportdir,commit1))
-    ro2 = run(os.path.join(reportdir,commit2))
+    ro1 = run(os.path.join(reportdir,commit1),nocache)
+    ro2 = run(os.path.join(reportdir,commit2),nocache)
 
     return (zip(ro1,ro2))
 
-def printset(commit,d) :
-    for (new,rem,fixed,broken,switch) in d :
-        print "Switch: %s" % switch
-        if len(new) > 0 :
+def printset(commit,report) :
+    for r in report :
+        print "Switch: %s" % r['switch']
+        if len(r['new']) > 0 :
             print "These packages are NEW (%s)" % commit
-            for (n,v) in new :
+            for (n,v) in r['new'] :
                 print "(%s,%s)" % (n,v)
 
-        if len(rem) > 0 :
+        if len(r['rem']) > 0 :
             print "These packages were REMOVED (%s)" % commit
-            for (n,v) in rem :
+            for (n,v) in r['rem'] :
                 print "(%s,%s)" % (n,v)
 
-        if len(fixed) > 0 :
+        if len(r['fixed']) > 0 :
             print "These packages were FIXED (%s)" % commit
-            for (n,v) in fixed :
+            for (n,v) in r['fixed'] :
                 print "(%s,%s)" % (n,v)
 
-        if len(broken) :
+        if len(r['broken']) :
             print "These packages are now BROKEN (%s)" % commit
-            for (n,v) in broken :
+            for (n,v) in r['broken'] :
                 print "(%s,%s)" % (n,v)
 
     print
  
 
-def compare(reportdir,commit1,commit2) :
+def compare(reportdir,commit1,commit2,nocache) :
     print "Comparing reports %s - %s" % (commit1,commit2)
     d = []
-    for (r1,r2) in load_and_parse(reportdir,commit1,commit2) :
+    for (r1,r2) in load_and_parse(reportdir,commit1,commit2,nocache) :
         (ok1,br1) = makeset(r1)
         (ok2,br2) = makeset(r2)
         switch = r1['switch']
@@ -212,25 +215,26 @@ def compare(reportdir,commit1,commit2) :
             'broken' : broken, 
             'switch' : r1['switch']
         })
+#    printset(commit1,d)
 
     return d
 
-def run(commit1,commit2) :
+def run(commit1,commit2,nocache) :
 
     reportdir = tempfile.mkdtemp('ows-diff')
     reportdir = OWSCACHE
     switches=VERSIONS.split()
 
     replay(commit1)
-    runopam(switches,os.path.join(reportdir,commit1))
+    runopam(switches,os.path.join(reportdir,commit1),nocache)
 
     replay(commit2)
-    runopam(switches,os.path.join(reportdir,commit2))
+    runopam(switches,os.path.join(reportdir,commit2),nocache)
 
-    d = compare(reportdir,commit1,commit2)
+    d = compare(reportdir,commit1,commit2,nocache)
     return d
 
-def patch(commit,patchfile):
+def patch(commit,patchfile,nocache):
     newbranch="ows-travis-branch"
     author=git.Actor("ows", "ows@irill.org")
 
@@ -250,7 +254,7 @@ def patch(commit,patchfile):
     repo.git.apply(patchfile)
     repo.index.commit("travis")
 
-    diff = run(commit,str(repo.commit()))
+    diff = run(commit,str(repo.commit()),nocache)
 
     d = os.path.join(OWSCACHE,str(repo.commit()))
     if os.path.exists(d) :

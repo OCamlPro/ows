@@ -8,33 +8,36 @@
 <p>Something went wrong : <strong>{{ error }}</strong></p>
 <p>Please check that the git references or if the given patch cleanly applies to {{ commit1 }}</p>
 {% else %}
-  {% for (new,rem,fixed,broken,switch) in report %}
-	{% if new|length >= 1 %} 
-	  <h3>OCaml {{ switch }}</h3>
+  {% for r in report %}
+    {% if r['new']|length == 0 and r['rem']|length == 0 and r['fixed']|length == 0 and r['broken']|length == 0 %}
+	  <h3>OCaml {{ r['switch'] }} : No Changes</h3>
+	{% endif %}
+	{% if r['new']|length >= 1 %} 
+	  <h3>OCaml {{ r['switch'] }}</h3>
 	  <p>
 	  The following packages are <strong>NEW</strong> :
-	  {% for (p,v) in new %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
+	  {% for (p,v) in r['new'] %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
 	  </p>
 	{% endif %}
 
-	{% if rem|length >= 1 %} 
+	{% if r['rem']|length >= 1 %} 
 	  <p>
 	  The following packages were <strong>REMOVED</strong> :
-	  {% for (p,v) in rem %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
+	  {% for (p,v) in r['rem'] %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
 	  </p>
 	{% endif %}
 
-	{% if fixed|length >= 1 %} 
+	{% if r['fixed']|length >= 1 %} 
 	  <p>
 	  The following packages are now <strong>FIXED</strong> :
-	  {% for (p,v) in fixed %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
+	  {% for (p,v) in r['fixed'] %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
 	  </p>
 	{% endif %}
 
-	{% if broken|length >= 1 %} 
+	{% if r['broken']|length >= 1 %} 
 	  <p>
 	  The following packages are now <strong>BROKEN</strong> :
-	  {% for (p,v) in broken %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
+	  {% for (p,v) in r['broken'] %}{{p}} ({{v}}){% if not loop.last %}, {% endif %}{% endfor %}
 	  </p>
 	{% endif %}
   {% endfor %}
