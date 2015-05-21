@@ -334,8 +334,13 @@ def html_weather(options,aggregatereport,summaryreport,switches):
                             dotfile = pydot.graph_from_dot_file(dotname)
                             dotfile.write_svg(os.path.join(options['dirname'],switch,"%s.%s.svg" % (name,version)))
     template = j2_env.get_template('templates/weather.html')
-    output = template.render({'summary' : summaryreport, 'switches': switches, 'baseurl' : options['baseurl']})
+
+    output = template.render({'summary' : summaryreport, 'switches': switches, 'baseurl' : options['baseurl'], 'allpackages' : False})
     fname = os.path.join(options['dirname'],"index.html")
+    save_page(output,fname)
+
+    output = template.render({'summary' : summaryreport, 'switches': switches, 'baseurl' : options['baseurl'], 'allpackages' : True})
+    fname = os.path.join(options['dirname'],"weather.html")
     save_page(output,fname)
 
     #generated json output

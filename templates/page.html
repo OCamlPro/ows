@@ -56,12 +56,12 @@
 				  <div class="row">
 					<div class="col-sm-12">
 					  <h4>Status of the Repository ({{summary['date']}})</h4>
-					  <ol>
+					  <ul>
 						<li>Package Names: {{ summary['totalnames'] }}</li>
 						<li>Broken Packages: {{ summary['broken'] }}</li>
 						<li>Partially Broken Packages: {{ summary['partial'] }}</li>
 						<li>Correct Packages: {{ summary['correct'] }}</li>
-					  </ol>
+					  </ul>
 					  <p><a class="btn btn-social-icon btn-sm btn-github"
 							href="https://github.com/ocaml/opam-repository/tree/{{summary['commit']}}">
 						  <i class="fa fa-github"></i> View Commit Tree</a>
