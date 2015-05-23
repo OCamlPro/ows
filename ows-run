@@ -17,6 +17,7 @@ import os.path
 from codecs import open
 import fnmatch
 import os, signal
+import gc
 import argparse
 import csv
 import datetime as dt
@@ -173,8 +174,8 @@ def aggregate(d):
                 for package in l :
                     ver = package['version']
                     r = package['reasons'] if package['status'] == "broken" else None
-                    direct = False
-                    indirect = False
+                    direct = None
+                    indirect = None
                     dc,dm = [],[] # direct conflicts, direct missing
                     idc,idm = [], {} # indirect conflicts, indirect missing
                     if 'maintainer' in package :
@@ -192,8 +193,10 @@ def aggregate(d):
                                 unsatdep = p['missing']['pkg']['unsat-dependency']
                                 if pkgname == name :
                                     direct = True
+                                    indirect = False
                                     dm.append(unsatdep)
                                 else :
+                                    direct = False
                                     indirect = True
                                     if pkgvers not in idm.setdefault(pkgname,[pkgvers]) :
                                         idm.setdefault(pkgname,[pkgvers]).append(pkgvers)
@@ -205,8 +208,10 @@ def aggregate(d):
                                 v2 = p['conflict']['pkg2']['version']
                                 if p['conflict']['pkg1']['package'] == name or p['conflict']['pkg2']['package'] == name :
                                     direct = True
+                                    indirect = False
                                     dc.append(((p1,v1),(p2,v2)))
                                 else :
+                                    direct = False
                                     indirect = True
                                     idc.append(((p1,v1),(p2,v2)))
 
@@ -262,12 +267,13 @@ def weather(report, history, today) :
         else :
             weather_today = "stormy"
         if len(history) > 1 :
-            if p in history[yesterday][1]['summary']['weather'] : 
-                weather_yesterday = list(history[yesterday][1]['summary']['weather'][p])[-1]
+            h = history[yesterday][1]['summary']
+            if 'weather' in h and p in h['weather'] : 
+                weather_yesterday = list(h['weather'][p])[-1]
                 if weather_yesterday == weather_today :
                     weather[p] = [weather_today]
                 else :
-                    weather[p] = [ weather_yesterday, weather_today ]
+                    weather[p] = [weather_yesterday, weather_today]
             else :
                 weather[p] = [weather_today]
         else :
@@ -294,7 +300,24 @@ def html_howto(options,summaryreport,switches):
     output = template.render({'switches': switches, 'summary' : summaryreport, 'baseurl' : options['baseurl']})
     fname = os.path.join(options['dirname'],"howto.html")
     save_page(output,fname)
- 
+
+def json_weather(options,date,aggregatereport):
+    print "Compiling JSON Report ..."
+    r = {}
+    for name,versions in aggregatereport.iteritems() :
+        for ver,data in versions.iteritems() :
+            for switch,status in data.iteritems():
+                (direct,indirect) = status[1]
+                p = {'version' : ver, 'switch' : switch, 'status' : status[0]}
+                if status[0] != 'ok' :
+                    p['direct'] = direct
+
+                r.setdefault(name,[]).append(p)
+
+    data = {'date' : date, 'report' : r }
+    json_string = json.dumps(data,cls=DateTimeEncoder,skipkeys=True,indent=4, separators=(',', ': '),sort_keys=True)
+    save_page(json_string,os.path.join(options['targetdir'],'json',"weather.json"))
+
 def html_weather(options,aggregatereport,summaryreport,switches):
     print "Compiling Weather Page"
     print "Compiling SVG files..."
@@ -343,10 +366,7 @@ def html_weather(options,aggregatereport,summaryreport,switches):
     fname = os.path.join(options['dirname'],"weather.html")
     save_page(output,fname)
 
-    #generated json output
-    data = {'switches': switches, 'date' : summaryreport['date'], 'aggregatereport' : aggregatereport }
-    json_string = json.dumps(data,cls=DateTimeEncoder,skipkeys=True,indent=4, separators=(',', ': '),sort_keys=True)
-    save_page(json_string,os.path.join(options['targetdir'],'json',"weather.json"))
+    json_weather(options,summaryreport['date'],aggregatereport)
 
 def rss_weather(options,history,summaryreport):
     print "Generating RSS feed"
@@ -463,6 +483,7 @@ def load_or_parse(reportdir,nocache):
                         switches.append(r['switch'])
                         report.append(r)
                     dataset.close()
+            gc.collect()
 
         print "Aggregating Data"
         (ar,sr) = aggregate(report)
@@ -491,6 +512,11 @@ def save_history(history,h,sr,switches):
     del sr['summary']
     newsummary = { 'switches' : switches , 'summary' : sr }
     h[sr['date']] = newsummary
+    # keep only the last 10 entries
+    for i in h.items()[10:] :
+        if 'weather' in i[1]['summary'] :
+            del i[1]['summary']['weather']
+    gc.collect()
 
     s = signal.signal(signal.SIGINT, signal.SIG_IGN)
     with open(history,'wb') as f :
