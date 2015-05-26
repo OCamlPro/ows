@@ -374,7 +374,7 @@ def rss_weather(options,history,summaryreport):
     for maintainer,packages in summaryreport['bymaintainer'].iteritems() :
         items = []
         for date,hist in history :
-            if 'bymaintainer' in hist['summary'] :
+            if 'summary' in hist and 'bymaintainer' in hist['summary'] :
                 bymaintainer = hist['summary']['bymaintainer']
                 commit = hist['summary']['commit']
                 if maintainer in bymaintainer :
@@ -514,6 +514,8 @@ def save_history(history,h,sr,switches):
     h[sr['date']] = newsummary
     # keep only the last 10 entries
     for i in h.items()[10:] :
+        if 'bymaintainer' in i[1]:
+            del i[1]['bymaintainer']
         if 'weather' in i[1]['summary'] :
             del i[1]['summary']['weather']
     gc.collect()
