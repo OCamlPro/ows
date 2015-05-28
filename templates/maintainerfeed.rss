@@ -17,10 +17,10 @@
         {% for (switch,l) in item['description'] %}
         <h3>{{ switch }}</h3>
         <ol>
-          {% for p in l %}
+          {% for (switch,name,version,status) in l %}
           <li>
-            <a href="{{baseurl}}/{{item['shortdate']}}/{{item['commit']}}/packages/{{p['package']}}-page.html" >{{ p['package'] }}</a> 
-            {{ p['version'] }} : {{ p['status'] }}</li>
+            <a href="{{ baseurl }}/{{ item['shortdate'] }}/{{ item['commit'] }}/packages/{{ name }}-page.html" >{{ name }}</a> 
+            {{ version }} : {{ status }}</li>
           {% endfor %}
         </ol>
         {% endfor %}

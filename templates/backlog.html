@@ -10,23 +10,20 @@
     <tr><th>Date</th><th>Details</th><th>Statistics</th></tr>
 	</thead>
 	<tbody>
-  {% for date,sum in history %}
-    {% if sum['summary'] is defined %}
-      {% set data = sum['summary'] %}
-      <tr>
-        <td><a href="../../{{date.strftime("%Y-%m-%d")}}/{{data['commit']}}/index.html">{{date}}</a></td>
-        <td>
-          <p>Commit: {{data['commit']}}</p>
-          <p>Author: {{data['author']}}</p>
-          <p>Title: {{data['title']}}</p>
-        </td>
-        <td>
-          <p>Total: {{data['totalnames']}}</p>
-          <p>Broken: {{data['broken']}}</p>
-          <p>Partial: {{data['partial']}}</p>
-        </td>
-      </tr>
-    {% endif %}
+  {% for date,data in history %}
+    <tr>
+      <td><a href="../../{{date.strftime("%Y-%m-%d")}}/{{data['commit']}}/index.html">{{date}}</a></td>
+      <td>
+        <p>Commit: {{data['commit']}}</p>
+        <p>Author: {{data['author']}}</p>
+        <p>Title: {{data['title']}}</p>
+      </td>
+      <td>
+        <p>Total: {{data['totalnames']}}</p>
+        <p>Broken: {{data['broken']}}</p>
+        <p>Partial: {{data['partial']}}</p>
+      </td>
+    </tr>
   {% endfor %}
 	</tbody>
   </table>
