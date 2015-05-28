@@ -61,14 +61,12 @@ j2_env.filters['urlencode'] = urlencode_filter
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, o):
-        if isinstance(o, dt.datetime):
-          return str(o.isoformat())
-
+        if isinstance(o, dt.datetime) :
+            return str(o.isoformat())
         try :
             r = json.JSONEncoder.default(self, o)
-        except TypeError(msg) :
-            pp.pprint(o)
-            raise TypeError(msg)
+        except TypeError, x :
+            return  x
         return r
 
 def versiontuple(v):
@@ -256,8 +254,9 @@ def aggregate(d):
     return aggregatereport,summaryreport
 
 # we assume the monotonicity of the opam repo
-def weather(report, history) :
+def weather(report, weather_yesterday) :
     weather = {}
+    print weather_yesterday
     for p,v in report.iteritems() :
         if v['percent'] == 0 :
             weather_today = "sunny"
@@ -265,8 +264,7 @@ def weather(report, history) :
             weather_today = "cloudy"
         else :
             weather_today = "stormy"
-        if history.get('weather',None) is not None :
-            weather_yesterday = history['weather']
+        if weather_yesterday is not None :
             if weather_yesterday == weather_today :
                 weather[p] = [weather_today]
             else :
@@ -495,28 +493,55 @@ def load_history(filename):
         with open(filename,'r') as f :
             h = pickle.load(f)
             f.close()
+    newsummary = {}
+    if 'switches' in h :
+        newsummary = {
+                'switches'     : h['switches'] ,
+                'plotdata'     : dict(h['plotdata']),
+                'bymaintainer' : dict(h['bymaintainer']),
+                'weather'      : h['weather'], 
+                'backlog'      : dict(h['backlog']) }
 
-    return h
+    return newsummary
 
 def save_history(filename,history,sr,switches):
+    import copy
     print "Saving History "
-    h = (sr['date'],sr['totals'])
-    bymaintainer = (sr['date'],sr['bymaintainer'])
-    weather = (sr['date'],sr['weather'])
-    summary = { 'commit' : sr['commit'],
-            'author' : sr['author'],
-            'title'  : sr['title'], 
-            'broken' : sr['broken'], 
+    date = sr['date']
+    plotdata = (date,sr['totals'])
+    bymaintainer = (date,sr['bymaintainer'])
+    weather = (date,copy.copy(sr['weather']))
+    summary = {
+            'commit'     : sr['commit'],
+            'author'     : sr['author'],
+            'title'      : sr['title'], 
+            'broken'     : sr['broken'], 
             'totalnames' : sr['totalnames'], 
-            'partial' : sr['partial']
-            }
-    summary = (sr['date'],summary)
-    newsummary = { 'switches' : switches ,
-            'plotdata' : dict([h] + history.get('plotdata',{}).items()),
-            'bymaintainer' : dict([bymaintainer] + history.get('bymaintainer',{}).items()[:10]),
-            'weather' : weather, 
-            'backlog' : dict([summary] + history.get('backlog',{}).items()[:10])
-            }
+            'partial'    : sr['partial'] }
+    backlog = (date,summary)
+
+    plotdatalist = history.get('plotdata',{}).items()
+    plotdatalist.insert(0,plotdata)
+    
+    bymaintainerlist = history.get('bymaintainer',{}).items()[:10]
+    bymaintainerlist.insert(0,bymaintainer)
+
+    backloglist = history.get('backlog',{}).items()[:10]
+    backloglist.insert(0,backlog)
+
+    newsummary = {
+            'switches'     : switches ,
+            'plotdata'     : plotdatalist,
+            'bymaintainer' : bymaintainerlist,
+            'weather'      : weather, 
+            'backlog'      : backloglist }
+
+    print "History stats :"
+    print " Plotdata : %d" % len(newsummary['plotdata'])
+    print " ByMaintainer : %d" % len(newsummary['bymaintainer'])
+    print " BackLog : %d" % len(newsummary['backlog'])
+    print " Plot Dates : %s %s" % (min(dict(newsummary['plotdata']).keys()),max(dict(newsummary['plotdata']).keys()))
+    print " BackLog Dates  %s %s" % (min(dict(newsummary['plotdata']).keys()),max(dict(newsummary['plotdata']).keys()))
 
     s = signal.signal(signal.SIGINT, signal.SIG_IGN)
     with open(filename,'wb') as f :
@@ -546,7 +571,10 @@ def main():
             'nosvg' : args.nosvg}
 
     h = load_history(args.history)
-    sr['weather'] = weather(sr['report'],h)
+    if 'weather' in sr :
+        sr['weather'] = weather(sr['report'],sr['weather'])
+    else :
+        sr['weather'] = {}
     rss_weather(options,h.get('bymaintainer',{}).items(),sr)
 
     html_backlog(options,h.get('backlog',{}).items(),sr)
