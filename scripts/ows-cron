@@ -37,7 +37,6 @@ function daterange {
     currentdate=$(/bin/date --date "$currentdate 1 day" +%Y-%m-%d)
   done
 }
-range=$(daterange ${origin} ${currentdate})
 
 NOCACHE=
 if [ $action == "run" ]; then
@@ -48,10 +47,19 @@ elif [ $action == "reset" ]; then
   echo "OWS Reset from 2012-05-19 ($NOCACHE)"
   rm -f ${REPORTDIR}/history.pickle
   ${OWSUPDATE} -f 2012-05-19
+  origin=2012-05-19
+elif [ $action == "resetpages" ]; then
+  NOCACHE="--nosvg"
+  echo "OWS Reset from 2012-05-19 ($NOCACHE)"
+  rm -f ${REPORTDIR}/history.pickle
+  origin=2012-05-19
 elif [ $action == "replay" ]; then
   NOCACHE="--nosvg"
   echo "Replay transation of the last $daysago days ($NOCACHE)"
   ${OWSUPDATE} $origin
+elif [ $action == "replaypages" ]; then
+  NOCACHE="--nosvg"
+  echo "Replay transation (html pages only) of the last $daysago days ($NOCACHE)"
 elif [ $action == "replayforce" ]; then
   NOCACHE="--nocache --nosvg"
   echo "Replay transation of the last $daysago days ($NOCACHE)"
@@ -62,6 +70,7 @@ elif [ $action = "runnosvg" ]; then
   ${OWSUPDATE} $origin
 fi
 
+range=$(daterange ${origin} ${currentdate})
 export REPORTDIR=$REPORTDIR
 
 for date in $range; do
