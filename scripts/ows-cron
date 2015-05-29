@@ -18,7 +18,8 @@ fi
 
 ######################################################################
 
-daysago=${1:-"0"}
+action=${1:-"run"}
+daysago=${2:-"0"}
 if [ $daysago == "0" ]; then
   origin=$(/bin/date +%Y-%m-%d)
 else
@@ -39,11 +40,26 @@ function daterange {
 range=$(daterange ${origin} ${currentdate})
 
 NOCACHE=
-if [ $daysago == "0" ]; then
+if [ $action == "run" ]; then
+  echo "Daily Run (last commit)"
   ${OWSUPDATE} -t
-else
+elif [ $action == "reset" ]; then
+  NOCACHE="--nocache --nosvg"
+  echo "OWS Reset from 2012-05-19 ($NOCACHE)"
+  rm -f ${REPORTDIR}/history.pickle
+  ${OWSUPDATE} -f 2012-05-19
+elif [ $action == "replay" ]; then
+  NOCACHE="--nosvg"
+  echo "Replay transation of the last $daysago days ($NOCACHE)"
+  ${OWSUPDATE} $origin
+elif [ $action == "replayforce" ]; then
+  NOCACHE="--nocache --nosvg"
+  echo "Replay transation of the last $daysago days ($NOCACHE)"
   ${OWSUPDATE} -f $origin
-  NOCACHE="--nocache"
+elif [ $action = "runnosvg" ]; then
+  NOCACHE="--nosvg"
+  echo "Replay transations from $origin to today ($NOCACHE)"
+  ${OWSUPDATE} $origin
 fi
 
 export REPORTDIR=$REPORTDIR
