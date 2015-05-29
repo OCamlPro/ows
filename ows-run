@@ -107,7 +107,7 @@ def plot(options,history):
     switches = set()
     hs = {}
     
-    for e in sorted(history,key=lambda x : x[0]):
+    for e in history:
         t = e[0]
         for switch,(total,broken,ok) in e[1].iteritems():
             hs.setdefault(switch,[]).append((date2num(t),ok))
@@ -522,12 +522,15 @@ def save_history(filename,history,sr,switches):
 
     plotdatalist = history.get('plotdata',{}).items()
     plotdatalist.insert(0,plotdata)
+    plotdatalist = sorted(plotdatalist,key=lambda x:x[0])
     
-    bymaintainerlist = history.get('bymaintainer',{}).items()[:10]
+    bymaintainerlist = history.get('bymaintainer',{}).items()
     bymaintainerlist.insert(0,bymaintainer)
+    bymaintainerlist = sorted(bymaintainerlist,key=lambda x:x[0],reverse=True)[:10]
 
-    backloglist = history.get('backlog',{}).items()[:10]
+    backloglist = history.get('backlog',{}).items()
     backloglist.insert(0,backlog)
+    backloglist = sorted(backloglist,key=lambda x:x[0],reverse=True)[:10]
 
     newsummary = {
             'switches'     : switches ,
@@ -541,7 +544,8 @@ def save_history(filename,history,sr,switches):
     print " ByMaintainer : %d" % len(newsummary['bymaintainer'])
     print " BackLog : %d" % len(newsummary['backlog'])
     print " Plot Dates : %s %s" % (min(dict(newsummary['plotdata']).keys()),max(dict(newsummary['plotdata']).keys()))
-    print " BackLog Dates  %s %s" % (min(dict(newsummary['plotdata']).keys()),max(dict(newsummary['plotdata']).keys()))
+    print " BackLog Dates  %s %s" % (min(dict(newsummary['backlog']).keys()),max(dict(newsummary['backlog']).keys()))
+    print " ByMaintainer Dates  %s %s" % (min(dict(newsummary['bymaintainer']).keys()),max(dict(newsummary['bymaintainer']).keys()))
 
     s = signal.signal(signal.SIGINT, signal.SIG_IGN)
     with open(filename,'wb') as f :
