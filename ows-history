@@ -1,0 +1,129 @@
+#!/usr/bin/python
+
+try :
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    warning('Pickle C-library not available, falling back to python')
+
+try :
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    warning('Pickle C-library not available, falling back to python')
+
+import os, signal
+import os.path
+import argparse
+import datetime as dt
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib import dates
+from matplotlib.dates import DateFormatter, date2num
+
+def load_history(filename):
+    print "Load History ",filename
+    h = {}
+    if os.path.exists(filename) :
+        with open(filename,'r') as f :
+            h = pickle.load(f)
+            f.close()
+    newsummary = {}
+    if 'switches' in h :
+        newsummary = {
+                'switches'     : h['switches'] ,
+                'plotdata'     : dict(h['plotdata']),
+                'bymaintainer' : dict(h['bymaintainer']),
+                'weather'      : h['weather'],
+                'backlog'      : dict(h['backlog']) }
+
+    return newsummary
+
+def save_history(filename,newsummary):
+    print "Saving History "
+
+    s = signal.signal(signal.SIGINT, signal.SIG_IGN)
+    with open(filename,'wb') as f :
+        pickle.dump(newsummary,f)
+        f.close()
+    signal.signal(signal.SIGINT, s)
+
+def plot(filename,history):
+    print "Computing Graph"
+    fig = plt.figure()
+    graph = fig.add_subplot(111)
+    switches = set()
+    hs = {}
+
+    for e in history:
+        t = e[0]
+        for switch,(total,broken,ok) in e[1].iteritems():
+            hs.setdefault(switch,[]).append((date2num(t),ok))
+            switches.add(switch)
+
+    for s in switches :
+        d = zip(*(hs[s]))
+        graph.plot_date(d[0],d[1],",-",label=s)
+
+    plt.legend(loc='upper left')
+    plt.title('Installable Package versions vs Time')
+    fig.autofmt_xdate()
+    plt.savefig(filename)
+
+def stats(history) :
+    print "History stats :"
+    print " Plotdata : %d" % len(history['plotdata'])
+    print " ByMaintainer : %d" % len(history['bymaintainer'])
+    print " BackLog : %d" % len(history['backlog'])
+    print " Plot Dates : %s %s" % (min(dict(history['plotdata']).keys()),max(dict(history['plotdata']).keys()))
+    print " BackLog Dates  %s %s" % (min(dict(history['backlog']).keys()),max(dict(history['backlog']).keys()))
+    print " ByMaintainer Dates  %s %s" % (min(dict(history['bymaintainer']).keys()),max(dict(history['bymaintainer']).keys()))
+
+def remove(history,daterange) :
+    historylist = sorted(history['plotdata'].items(),key=lambda x:x[0])
+    get_datetime = lambda s: dt.datetime.strptime(s,"%Y-%m-%d")
+    base = get_datetime(daterange)
+    later = filter(lambda d: d[0] > base and base > d[0], historylist)
+    if len(later) > 0 :
+        d,_ = min(later, key = lambda d: d[0])
+
+        print "Remove All Entries for ", d
+
+        print "Remove Dataplot "
+        del history['plotdata'][d]
+        print "Remove ByMaintainer "
+        del history['bymaintainer'][d]
+        print "Remove Backlog "
+        del history['backlog'][d]
+    else :
+        print "No Entries for ", base
+    return history
+
+def main():
+    parser = argparse.ArgumentParser(description='manipulate ows history file')
+    parser.add_argument('--stats', action='store_true', help="Print History Stats", default=False)
+    parser.add_argument('--plot', action='store_true', help="Save Plot in plot.png", default=False)
+    parser.add_argument('--remove', type=str, help="remove entry")
+
+    parser.add_argument('filename', type=str, nargs=1, help="history file")
+    args = parser.parse_args()
+
+    print "Considering ", args.filename[0]
+    history = load_history(args.filename[0])
+
+    if args.stats or (args.plot == False and args.remove is None): 
+        stats(history)
+
+    if args.remove is not None :
+        history = remove(history,args.remove)
+        save_history(args.filename[0],history)
+        stats(history)
+
+    if args.plot :
+        plotfile = "plot.png"
+        plot(plotfile,history.get('plotdata',{}).items())
+
+if __name__ == '__main__':
+    main()
