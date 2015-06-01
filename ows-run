@@ -107,7 +107,7 @@ def plot(options,history):
     switches = set()
     hs = {}
     
-    for e in history:
+    for e in sorted(history,key=lambda x:x[0]):
         t = e[0]
         for switch,(total,broken,ok) in e[1].iteritems():
             hs.setdefault(switch,[]).append((date2num(t),ok))

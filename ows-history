@@ -89,18 +89,27 @@ def remove(history,daterange) :
     historylist = sorted(history['plotdata'].items(),key=lambda x:x[0])
     get_datetime = lambda s: dt.datetime.strptime(s,"%Y-%m-%d")
     base = get_datetime(daterange)
-    later = filter(lambda d: d[0] > base and base > d[0], historylist)
+    later = filter(lambda d: base < d[0], historylist)
     if len(later) > 0 :
         d,_ = min(later, key = lambda d: d[0])
 
         print "Remove All Entries for ", d
 
-        print "Remove Dataplot "
-        del history['plotdata'][d]
-        print "Remove ByMaintainer "
-        del history['bymaintainer'][d]
-        print "Remove Backlog "
-        del history['backlog'][d]
+        if d in history['plotdata'] :
+            print "Remove Dataplot "
+            del history['plotdata'][d]
+        else :
+            print "No entry in plotdata"
+        if d in history['bymaintainer'] :
+            print "Remove ByMaintainer "
+            del history['bymaintainer'][d]
+        else :
+            print "No entry in bymaintainer"
+        if d in history['backlog'] :
+            print "Remove Backlog "
+            del history['backlog'][d]
+        else :
+            print "No entry in backlog"
     else :
         print "No Entries for ", base
         return None
