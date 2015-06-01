@@ -14,7 +14,7 @@
     <tr>
       <td><a href="../../{{date.strftime("%Y-%m-%d")}}/{{data['commit']}}/index.html">{{date}}</a></td>
       <td>
-        <p>Commit: {{data['commit']}}</p>
+        <p>Commit: <a href="https://github.com/ocaml/opam-repository/tree/{{data['commit']}}">{{data['commit']}}</a></p>
         <p>Author: {{data['author']}}</p>
         <p>Title: {{data['title']}}</p>
       </td>
