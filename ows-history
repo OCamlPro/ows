@@ -16,12 +16,16 @@ import os, signal
 import os.path
 import argparse
 import datetime as dt
+import shutil
 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import dates
 from matplotlib.dates import DateFormatter, date2num
+
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 def load_history(filename):
     print "Load History ",filename
@@ -57,7 +61,7 @@ def plot(filename,history):
     switches = set()
     hs = {}
 
-    for e in history:
+    for e in sorted(history,key=lambda x:x[0]):
         t = e[0]
         for switch,(total,broken,ok) in e[1].iteritems():
             hs.setdefault(switch,[]).append((date2num(t),ok))
@@ -99,7 +103,12 @@ def remove(history,daterange) :
         del history['backlog'][d]
     else :
         print "No Entries for ", base
+        return None
     return history
+
+def backup(filename) :
+    print "Backup history : %s.backup" % filename
+    shutil.copyfile(filename,"%s.backup" % filename)
 
 def main():
     parser = argparse.ArgumentParser(description='manipulate ows history file')
@@ -117,9 +126,11 @@ def main():
         stats(history)
 
     if args.remove is not None :
-        history = remove(history,args.remove)
-        save_history(args.filename[0],history)
-        stats(history)
+        h = remove(history,args.remove)
+        if h is not None :
+            backup(args.filename[0])
+            save_history(args.filename[0],h)
+            stats(h)
 
     if args.plot :
         plotfile = "plot.png"
