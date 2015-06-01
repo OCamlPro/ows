@@ -96,8 +96,8 @@ if hash optipng 2>/dev/null ; then
 fi
 
 if hash hardlink 2>/dev/null ; then
-  echo "Remove duplicates file"
-  hardlink ${TARGETDIR}
+  echo "Remove duplicates file (in the background)"
+  hardlink ${TARGETDIR} &
 fi
 
 echo "Archiving all reports older then $age days in $dir/archive"

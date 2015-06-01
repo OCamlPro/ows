@@ -23,6 +23,7 @@ Author(s) : Pietro Abate <pietro . abate @ pps . univ - paris - diderot . fr>
  * python-yaml
  * python-matplotlib
  * python-jinja2
+ * python-progressbar
 - Other
  * optipng (for png compression)
  * hardlink (to hardlink together duplicate files)

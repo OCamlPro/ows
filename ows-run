@@ -24,6 +24,8 @@ import datetime as dt
 import json
 import pydot
 
+from progressbar import Bar, Percentage, ProgressBar
+
 from email.utils import parseaddr, formatdate
 
 import matplotlib
@@ -313,10 +315,14 @@ def json_weather(options,date,aggregatereport):
 
 def html_weather(options,aggregatereport,summaryreport,switches):
     print "Compiling Weather Page"
-    print "Compiling SVG files..."
-    print "Compiling modal overlays..."
-    print "Compiling standalone packages' pages..."
+    print "Compiling modal overlays and standalone packages' pages"
+    pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=len(aggregatereport))
+
+    i = 0
+    pbar.start()
     for name,versions in aggregatereport.iteritems() :
+        i += 1
+        pbar.update(i)
         templatemodal = j2_env.get_template('templates/packagemodal.html')
         output = templatemodal.render({
             'name' : name,
@@ -340,6 +346,14 @@ def html_weather(options,aggregatereport,summaryreport,switches):
             'baseurl' : options['baseurl']})
         fname = os.path.join(options['dirname'],"packages",name+"-page.html")
         save_page(output,fname)
+    pbar.finish()
+
+    print "Compiling SVG files..."
+    i = 0
+    pbar.start()
+    for name,versions in aggregatereport.iteritems() :
+        i += 1
+        pbar.update(i)
 
         if not options['nosvg'] :
             for switch in switches :
@@ -349,6 +363,8 @@ def html_weather(options,aggregatereport,summaryreport,switches):
                         if os.path.exists(dotname) :
                             dotfile = pydot.graph_from_dot_file(dotname)
                             dotfile.write_svg(os.path.join(options['dirname'],switch,"%s.%s.svg" % (name,version)))
+    pbar.finish()
+
     template = j2_env.get_template('templates/weather.html')
 
     output = template.render({'summary' : summaryreport, 'switches': switches, 'baseurl' : options['baseurl'], 'allpackages' : False})
@@ -364,7 +380,13 @@ def html_weather(options,aggregatereport,summaryreport,switches):
 def rss_weather(options,history,summaryreport):
     print "Generating RSS feed"
     template = j2_env.get_template('templates/maintainerfeed.rss')
+    pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=len(summaryreport['bymaintainer']))
+
+    i = 0
+    pbar.start()
     for maintainer,packages in summaryreport['bymaintainer'].iteritems() :
+        i += 1
+        pbar.update(i)
         items = []
         for date,bymaintainer in history :
             commit = summaryreport['commit']
@@ -384,6 +406,7 @@ def rss_weather(options,history,summaryreport):
             'items' : items })
         fname = os.path.join(options['targetdir'],'rss','%s.rss' % maintainer)
         save_page(output,fname)
+    pbar.finish()
 
 def html_summary(options,summaryreport,switches):
     print "Compiling Summary Page"
