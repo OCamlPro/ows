@@ -41,12 +41,14 @@ regular intervals
 
 ## How To Use ?
 
-''ows-update'' initializes a local opam repository and keeps it up-to-date.
-It can be run from a cron script. It creates a directory where it stores
-all the opam universes and the result of distcheck and initialize the html
-root directory. Ex :
+''ows-update -s'' initializes a local opam repository and initialize the html
+root directory.
 
-    ows-update 2015-03-12 2015-03-13
+''ows-update 2015-03-12 2015-03-13''
+
+It creates a directory where it stores all the opam universes and the result of
+distcheck and 
+
 
 ''ows-run'' takes a local directory containing the distcheck results and
 aggregates and build one ows report. Usually ows.py is run in a for cycle :
@@ -60,3 +62,7 @@ it can be run from a cron script. Ex :
 
     ./ows-archive html 11
 
+''scripts/ows-cron'' can be run regularly and takes care of keeping the repository
+up to date and to generate the ows html pages. It has a number of debugging options.
+
+''ows-wucgi'' is a wucgi server meant to work in conjunction with a web server.
