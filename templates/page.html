@@ -4,12 +4,11 @@
     <title>Opam Weather Service</title>
 	<meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet" href="{{baseurl}}/css/bootstrap.min.css" media="screen">
-	<link rel="stylesheet" href="{{baseurl}}/css/bootstrap.vertical-tabs.min.css">
-	<link rel="stylesheet" href="{{baseurl}}/css/jquery.dataTables.css">
-	<!--link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"-->
-	<link rel="stylesheet" href="{{baseurl}}/css/weather-icons.min.css">
-	<link rel="stylesheet" href="{{baseurl}}/css/custom.css">
+	<link rel="stylesheet" href="/css/bootstrap.min.css" media="screen">
+	<link rel="stylesheet" href="/css/bootstrap.vertical-tabs.min.css">
+	<link rel="stylesheet" href="/css/jquery.dataTables.css">
+	<link rel="stylesheet" href="/css/weather-icons.min.css">
+	<link rel="stylesheet" href="/css/custom.css">
   </head>
   <body>
 
@@ -22,18 +21,18 @@
 			  <span class="icon-bar"></span>
 			  <span class="icon-bar"></span>
 			</button>
-			<a href="{{baseurl}}/latest/today/index.html" class="navbar-brand" title="Most Recent OWS Report">OWS</a>
+			<a href="/latest/today/index.html" class="navbar-brand" title="Most Recent OWS Report">OWS</a>
 		  </div>
 		  <div class="collapse navbar-collapse" role="navigation">
 			<ul class="nav navbar-nav">
-			  <li><a href="index.html" title="Opam Repository Status Overview">Weather</a></li>
-			  <li><a href="summary.html" title="Summary of the Most Offending Broken Packages">Summary</a></li>
-			  <li><a href="backlog.html" title="OWS Reports' Archive">Backlog</a></li>
-			  <li><a href="howto.html" title="OWS Documentation">Documentation</a></li>
-			  <li><a href="credits.html" title="About US">Credits</a></li>
-			  <li><a href="http://www.inria.fr/"><img style="height: 50px;" src="{{baseurl}}/images/logo_INRIA.png" alt="INRIA"/></a></li>
-			  <li><a href="http://www.irill.org"><img style="height: 50px;" src="{{baseurl}}/images/logo_IRILL.png" alt="IRILL"/></a></li>
-			  <li><a href="http://ocamlpro.com"><img style="background:grey; height: 50px;" src="{{baseurl}}/images/logo_OCAMLPRO.png" alt="OCAMLPRO"/></a></li>
+			  <li><a href="/{{shortdate}}/{{commit}}/summary.html" title="Summary of the Most Offending Broken Packages">Summary</a></li>
+			  <li><a href="/{{shortdate}}/{{commit}}/backlog.html" title="OWS Reports' Archive">Backlog</a></li>
+			  <li><a href="/{{shortdate}}/{{commit}}/dashboard.html" title="Package Maintainers' Dashboard Page">Dashboard</a></li>
+			  <li><a href="/{{shortdate}}/{{commit}}/howto.html" title="OWS Documentation">Documentation</a></li>
+			  <li><a href="/{{shortdate}}/{{commit}}/credits.html" title="About US">Credits</a></li>
+			  <li><a href="http://www.inria.fr/"><img style="height: 50px;" src="/images/logo_INRIA.png" alt="INRIA"/></a></li>
+			  <li><a href="http://www.irill.org"><img style="height: 50px;" src="/images/logo_IRILL.png" alt="IRILL"/></a></li>
+			  <li><a href="http://ocamlpro.com"><img style="background:grey; height: 50px;" src="/images/logo_OCAMLPRO.png" alt="OCAMLPRO"/></a></li>
 			</ul>
 		  </div>
 		</div>
@@ -43,7 +42,7 @@
 		  <div class="row">
 			<div class="col-md-4">
 			  <h1>OPAM Weather Service</h1>
-			  <h3>Powered by opam/dose</h3>
+			  <h4>Powered by opam/dose</h4>
 			  <h3>{% block title %}{% endblock %}</h3>
 			  <p>{% block intro %}{% endblock %}</p>
 		  </div>
@@ -93,11 +92,11 @@
 	  </div>
 	</div>
 
-	<script src="{{baseurl}}/js/jquery.min.js"></script>
-	<script src="{{baseurl}}/js/bootstrap.min.js"></script>
-	<script src="{{baseurl}}/js/jquery.dataTables.min.js"></script>
-	<script src="{{baseurl}}/js/jquery.svg.min.js"></script>
-	<script src="{{baseurl}}/js/ows.js"></script>
+	<script src="/js/jquery.min.js"></script>
+	<script src="/js/bootstrap.min.js"></script>
+	<script src="/js/jquery.dataTables.min.js"></script>
+	<script src="/js/jquery.svg.min.js"></script>
+	<script src="/js/ows.js"></script>
 
   </body>
 

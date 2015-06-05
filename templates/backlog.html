@@ -12,7 +12,7 @@
 	<tbody>
   {% for date,data in history %}
     <tr>
-      <td><a href="../../{{date.strftime("%Y-%m-%d")}}/{{data['commit']}}/index.html">{{date}}</a></td>
+      <td><a href="/{{date.strftime("%Y-%m-%d")}}/{{data['commit']}}/index.html">{{date}}</a></td>
       <td>
         <p>Commit: <a href="https://github.com/ocaml/opam-repository/tree/{{data['commit']}}">{{data['commit']}}</a></p>
         <p>Author: {{data['author']}}</p>

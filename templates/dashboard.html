@@ -1,0 +1,85 @@
+{% extends "templates/page.html" %}
+
+
+{% block title %}{{ maintainer }} Dashboard{% endblock %}
+
+{% block intro %}
+This page lists all packages associated to {{ maintainer }}.
+You can also subscribe to the <a href="/rss/{{ maintainer }}">RSS feed</a>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <table id="package-table" class="table table-hover table-condensed" >
+	<thead>
+	  <tr><th>Name</th><th>status</th>{% for s in switches %}<th>{{s}}</th>{% endfor %}</tr>
+	</thead>
+	<tbody>
+	{% for name,versions in summary['report'].iteritems() %}
+    {% if summary['report'][name]['status'] != 'ok' or allpackages %}
+	  <tr>
+		<td>
+      <a href="#package{{name}}" 
+         id="#package{{name}}"
+         data-toggle="modal"
+         data-target="#myModal"
+         data-remote="/{{shortdate}}/{{commit}}/packages/{{name}}-modal.html">{{name}}
+      </a>
+      {% for w in summary['weather'][name] %}
+        {% if w == "sunny" %}
+          <i class="wi wi-sunny"></i>
+        {% elif w == "cloudy" %}
+          <i class="wi wi-cloudy"></i>
+        {% else %}
+          <i class="wi wi-showers"></i>
+        {% endif %}
+      {% endfor %}
+    </td>
+		<td>
+			{% if summary['report'][name]['status'] == 'broken' %}
+			<span style="color:red"
+				  title="This package is not usable with any compiler">
+				<span class="glyphicon glyphicon-thumbs-down"></span>
+			  </span>
+			{% elif summary['report'][name]['status'] == 'partial' %}
+			  <span style="color:red"
+					title="{{ summary['report'][name]['percent'] }}% of the total available versions of this package are not installable">
+				<span class="glyphicon glyphicon-warning-sign"></span>
+			  </span>
+			{% elif summary['report'][name]['status'] == 'ok' %}
+			  <span style="color:green">
+				<span class="glyphicon glyphicon-thumbs-up"></span>
+			  </span>
+			{% endif %}
+		</td>
+		{% for s in switches %}
+		  <td>
+		  {% if summary['report'][name][s] is defined %}
+			{% if summary['report'][name][s] == 'broken' %}
+			  <span style="color:red"
+					title="This package cannot be used with OCaml {{s}}">
+				<span class="glyphicon glyphicon-fire"></span>
+			  </span>
+			{% elif summary['report'][name][s] == 'partial' %}
+			  <span style="color:orange"
+					title="Some versions of this package cannot be used with OCaml {{s}}">
+				<span class="glyphicon glyphicon-fire"></span>
+			  </span>
+			{% elif summary['report'][name][s] == 'ok' %}
+			  <span style="color:green">
+				<span class="glyphicon glyphicon-ok"></span>
+			  </span>
+			{% endif %}
+		  {% else %}
+			  <span class="glyphicon glyphicon-option-horizontal"
+					title="This package is not available for OCaml {{s}}"></span>
+		  {% endif %}
+		  </td>
+		{% endfor %}
+	  </tr>
+    {% endif %}
+	{% endfor %}
+	</tbody>
+  </table>
+</div>
+{% endblock %}

@@ -17,6 +17,7 @@ import os.path
 from codecs import open
 import fnmatch
 import os, signal
+import copy
 import gc
 import argparse
 import csv
@@ -177,12 +178,16 @@ def aggregate(d):
                     indirect = None
                     dc,dm = [],[] # direct conflicts, direct missing
                     idc,idm = [], {} # indirect conflicts, indirect missing
-                    if 'maintainer' in package :
-                        maintainer = parseaddr(package['maintainer'])
+                    if 'maintainer' in package:
+                        (namestr,addr) = parseaddr(package['maintainer'])
+                        if len(addr.encode('utf8')) > 0 :
+                            maintainer = addr
+                        elif len(namestr.encode('utf8')) > 0 :
+                            maintainer = urlencode_filter(namestr)
+                        else :
+                            maintainer = "orphan"
                     else :
-                        #print "Warning : Orphaned package %s %s" % (name,ver)
                         maintainer = "orphan"
-                    maintainer = maintainer[1] if maintainer[1] <> '' else urlencode_filter(maintainer[0])
                     info = (switch,name,ver,package['status'])
                     bymaintainer.setdefault(maintainer,[info]).append(info)
                     if 'reasons' in package :
@@ -277,22 +282,28 @@ def weather(report, weather_yesterday) :
 
 def html_backlog(options,history,summaryreport):
     print "Compiling BackLog Page"
+    shortdate = summaryreport['date'].strftime("%Y-%m-%d")
+    commit = summaryreport['commit']
     template = j2_env.get_template('templates/backlog.html')
-    output = template.render({'history': history, 'summary' : summaryreport, 'baseurl' : options['baseurl']})
+    output = template.render({'shortdate' : shortdate, 'commit' : commit, 'history': history, 'summary' : summaryreport})
     fname = os.path.join(options['dirname'],"backlog.html")
     save_page(output,fname)
 
 def html_credits(options,summaryreport):
     print "Compiling Credits Page"
+    shortdate = summaryreport['date'].strftime("%Y-%m-%d")
+    commit = summaryreport['commit']
     template = j2_env.get_template('templates/credits.html')
-    output = template.render({'summary' : summaryreport, 'baseurl' : options['baseurl']})
+    output = template.render({'shortdate' : shortdate, 'commit' : commit, 'summary' : summaryreport})
     fname = os.path.join(options['dirname'],"credits.html")
     save_page(output,fname)
  
 def html_howto(options,summaryreport,switches):
     print "Compiling Howto Page"
+    shortdate = summaryreport['date'].strftime("%Y-%m-%d")
+    commit = summaryreport['commit']
     template = j2_env.get_template('templates/howto.html')
-    output = template.render({'switches': switches, 'summary' : summaryreport, 'baseurl' : options['baseurl']})
+    output = template.render({'shortdate' : shortdate, 'commit' : commit,'switches': switches, 'summary' : summaryreport})
     fname = os.path.join(options['dirname'],"howto.html")
     save_page(output,fname)
 
@@ -314,10 +325,45 @@ def json_weather(options,summaryreport,aggregatereport):
     json_string = json.dumps(data,cls=DateTimeEncoder,skipkeys=True,indent=4, separators=(',', ': '),sort_keys=True)
     save_page(json_string,os.path.join(options['targetdir'],'json',"weather.json"))
 
+def html_dashboard(options,aggregatereport,summaryreport,switches):
+    print "Compiling Dashboard Pages"
+    shortdate = summaryreport['date'].strftime("%Y-%m-%d")
+    commit = summaryreport['commit']
+    pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=len(aggregatereport))
+    template = j2_env.get_template('templates/dashboard.html')
+
+    i = 0
+    pbar.start()
+    summary = copy.copy(summaryreport)
+    dashboardtable = []
+    for maintainer,packages in sorted(summaryreport['bymaintainer'].items(), key=lambda (x,y) : x.lower()) :
+        i += 1
+        pbar.update(i)
+        items = []
+        del summary['report'];
+        summary['report'] = {}
+        for (switch,name,ver,status) in packages :
+            summary['report'][name] = summaryreport['report'][name]
+        summary['report'] = OrderedDict(sorted(summary['report'].items(), key=lambda x : x[1]['percent'],reverse=True))
+
+        dashboardtable.append((maintainer,{ 'totalnames' : len(summary['report']), 'broken': 0, 'partial': 0 }))
+
+        output = template.render({'shortdate' : shortdate, 'commit' : commit, 'summary' : summary, 'switches': switches, 'allpackages' : True})
+        fname = os.path.join(options['dirname'],"dashboard","%s.html" % maintainer)
+        save_page(output,fname)
+    pbar.finish()
+
+    template = j2_env.get_template('templates/dashboardtable.html')
+    output = template.render({'shortdate' : shortdate, 'commit' : commit, 'bymaintainer' : dashboardtable, 'switches': switches})
+    fname = os.path.join(options['dirname'],"dashboard.html")
+    save_page(output,fname)
+
 def html_weather(options,aggregatereport,summaryreport,switches):
     print "Compiling Weather Page"
     print "Compiling modal overlays and standalone packages' pages"
     pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=len(aggregatereport))
+    shortdate = summaryreport['date'].strftime("%Y-%m-%d")
+    commit = summaryreport['commit']
 
     i = 0
     pbar.start()
@@ -330,9 +376,8 @@ def html_weather(options,aggregatereport,summaryreport,switches):
             'versions' : versions,
             'switches': switches,
             'date' : summaryreport['date'],
-            'shortdate' : summaryreport['date'].strftime("%Y-%m-%d"),
-            'commit' : summaryreport['commit'],
-            'baseurl' : options['baseurl']})
+            'shortdate' : shortdate,
+            'commit' : commit})
         fname = os.path.join(options['dirname'],"packages",name+"-modal.html")
         save_page(output,fname)
 
@@ -342,9 +387,7 @@ def html_weather(options,aggregatereport,summaryreport,switches):
             'versions' : versions, 
             'switches': switches, 
             'date' : summaryreport['date'], 
-            'shortdate' : summaryreport['date'].strftime("%Y-%m-%d"),
-            'commit' : summaryreport['commit'],
-            'baseurl' : options['baseurl']})
+            'shortdate' : shortdate, 'commit' : commit})
         fname = os.path.join(options['dirname'],"packages",name+"-page.html")
         save_page(output,fname)
     pbar.finish()
@@ -368,11 +411,11 @@ def html_weather(options,aggregatereport,summaryreport,switches):
 
     template = j2_env.get_template('templates/weather.html')
 
-    output = template.render({'summary' : summaryreport, 'switches': switches, 'baseurl' : options['baseurl'], 'allpackages' : False})
+    output = template.render({'shortdate' : shortdate, 'commit' : commit, 'summary' : summaryreport, 'switches': switches, 'allpackages' : False})
     fname = os.path.join(options['dirname'],"index.html")
     save_page(output,fname)
 
-    output = template.render({'summary' : summaryreport, 'switches': switches, 'baseurl' : options['baseurl'], 'allpackages' : True})
+    output = template.render({'shortdate' : shortdate, 'commit' : commit, 'summary' : summaryreport, 'switches': switches, 'allpackages' : True})
     fname = os.path.join(options['dirname'],"weather.html")
     save_page(output,fname)
 
@@ -409,6 +452,8 @@ def rss_weather(options,history,summaryreport):
 
 def html_summary(options,summaryreport,switches):
     print "Compiling Summary Page"
+    shortdate = summaryreport['date'].strftime("%Y-%m-%d")
+    commit = summaryreport['commit']
     for t,s in summaryreport['summary'].iteritems() :
         if t == 'missing' :
             for (name,version),a in s.iteritems() :
@@ -423,7 +468,7 @@ def html_summary(options,summaryreport,switches):
                 rows = map(lambda x: list(x),izip_longest(*(sorted(rows,key=lambda x : x[0]))))
                 template = j2_env.get_template('templates/packagelist.html')
                 title = "%s %s (ows : %s)" % (name,version,summaryreport['date'])
-                output = template.render({'title' : title, 'summary' : rows, 'switches': switches, 'baseurl' : options['baseurl']})
+                output = template.render({'title' : title, 'summary' : rows, 'switches': switches})
                 fname = os.path.join(options['dirname'],"summary",name+version+".html")
                 save_page(output,fname)
         if t == 'conflict' :
@@ -439,12 +484,12 @@ def html_summary(options,summaryreport,switches):
                 rows = map(lambda x: list(x),izip_longest(*(sorted(rows,key=lambda x : x[0]))))
                 template = j2_env.get_template('templates/packagelist.html')
                 title = "%s %s # %s %s (ows : %s)" % (pkg1[0],pkg1[1],pkg2[0],pkg2[1],summaryreport['date'])
-                output = template.render({'title': title, 'summary' : rows, 'switches': switches, 'baseurl' : options['baseurl']})
+                output = template.render({'title': title, 'summary' : rows, 'switches': switches})
                 fname = os.path.join(options['dirname'],"summary",pkg1[0]+pkg1[1]+"-"+pkg2[0]+pkg2[1]+".html")
                 save_page(output,fname)
 
     template = j2_env.get_template('templates/summary.html')
-    output = template.render({'summary' : summaryreport, 'switches': switches, 'baseurl' : options['baseurl']})
+    output = template.render({'shortdate' : shortdate, 'commit' : commit,'summary' : summaryreport, 'switches': switches})
     fname = os.path.join(options['dirname'],"summary.html")
     save_page(output,fname)
 
@@ -467,6 +512,9 @@ def setup(summaryreport,switches,targetdir):
     packages = os.path.join(dirname,'packages')
     if not os.path.exists(packages) :
         os.makedirs(packages)
+    dashboards = os.path.join(dirname,'dashboard')
+    if not os.path.exists(dashboards) :
+        os.makedirs(dashboards)
     for switch in switches :
         switchname = os.path.join(dirname,switch)
         if not os.path.exists(switchname) :
@@ -608,6 +656,7 @@ def main():
     
     if args.nopages == False :
         html_weather(options,ar,sr,switches)
+        html_dashboard(options,ar,sr,switches)
         html_summary(options,sr,switches)
         html_howto(options,sr,switches)
         html_credits(options,sr)

@@ -30,7 +30,7 @@
 					 title="Fix It !">
 					<span class="glyphicon glyphicon-zoom-in"></span>
 				  </a>
-				  <a class="btn btn-xs graph" href="{{baseurl}}/{{shortdate}}/{{commit}}/{{switch}}/{{name}}.{{version}}.svg"
+				  <a class="btn btn-xs graph" href="/{{shortdate}}/{{commit}}/{{switch}}/{{name}}.{{version}}.svg"
 					 title="Explanation Graph">
 					<span class="glyphicon glyphicon-picture"></span>
 				  </a>
@@ -79,10 +79,10 @@
 				 <p><ul>
 				   {% for ((p1,v1),(p2,v2)) in dc %}
 				   <li>These packages are in conflict : 
-					 <a href="{{baseurl}}/{{shortdate}}/{{commit}}/packages/{{p1}}.html" class="package-backlink">{{ p1 }}</a>
-					 (= <a href="{{baseurl}}/{{shortdate}}/{{commit}}/packages/{{p1}}.html" version="{{v1|replace(".","_")}}" class="version-backlink">{{ v1 }}</a>) 
-					 (<a href="{{baseurl}}/{{shortdate}}/{{commit}}/packages/{{p2}}.html" class="package-backlink">{{ p2 }}</a>
-					 (= <a href="{{baseurl}}/{{shortdate}}/{{commit}}/packages/{{p2}}.html" version="{{v2|replace(".","_")}}" class="version-backlink">{{ v2 }}</a>) </li>
+					 <a href="/{{shortdate}}/{{commit}}/packages/{{p1}}.html" class="package-backlink">{{ p1 }}</a>
+					 (= <a href="/{{shortdate}}/{{commit}}/packages/{{p1}}.html" version="{{v1|replace(".","_")}}" class="version-backlink">{{ v1 }}</a>) 
+					 (<a href="/{{shortdate}}/{{commit}}/packages/{{p2}}.html" class="package-backlink">{{ p2 }}</a>
+					 (= <a href="/{{shortdate}}/{{commit}}/packages/{{p2}}.html" version="{{v2|replace(".","_")}}" class="version-backlink">{{ v2 }}</a>) </li>
 				   {% endfor %}
 				 </ul></p>
 				 {% endif %}
@@ -91,9 +91,9 @@
 			  {% if idc|length > 0 or idm|length > 0 %}
 				<p>This package cannot be use with OCaml {{switch}} because package(s)
 				   {% for pkg,verlist in idm.iteritems() %}
-				   <a href="{{baseurl}}/{{shortdate}}/{{commit}}/packages/{{pkg}}.html" class="package-backlink">{{ pkg }}</a> (versions :
+				   <a href="/{{shortdate}}/{{commit}}/packages/{{pkg}}.html" class="package-backlink">{{ pkg }}</a> (versions :
 					  {% for v in verlist %}
-					  <a href="{{baseurl}}/{{shortdate}}/{{commit}}/packages/{{pkg}}.html" version="{{v|replace(".","_")}}" class="version-backlink">{{ v }}</a>
+					  <a href="/{{shortdate}}/{{commit}}/packages/{{pkg}}.html" version="{{v|replace(".","_")}}" class="version-backlink">{{ v }}</a>
 						{% if not loop.last %},{% endif %}
 					  {% endfor %}
 					).
@@ -101,10 +101,10 @@
 				   <p><ul>
 					 {% for ((p1,v1),(p2,v2)) in idc %}
 					 <li>These packages are in conflict : 
-					   <a href="{{baseurl}}/{{shortdate}}/{{commit}}/packages/{{p1}}.html" class="package-backlink">{{ p1 }}</a>
-					   (= <a href="{{baseurl}}/{{shortdate}}/{{commit}}/packages/{{p1}}.html" version="{{v1|replace(".","_")}}" class="version-backlink">{{ v1 }}</a>) 
-					   (<a href="{{baseurl}}/{{shortdate}}/{{commit}}/packages/{{p2}}.html" version="{{v2|replace(".","_")}}" class="package-backlink">{{ p2 }}</a>
-					   (= <a href="{{baseurl}}/{{shortdate}}/{{commit}}/packages/{{p2}}.html" version="{{v2|replace(".","_")}}" class="version-backlink">{{ v2 }}</a>) </li>
+					   <a href="/{{shortdate}}/{{commit}}/packages/{{p1}}.html" class="package-backlink">{{ p1 }}</a>
+					   (= <a href="/{{shortdate}}/{{commit}}/packages/{{p1}}.html" version="{{v1|replace(".","_")}}" class="version-backlink">{{ v1 }}</a>) 
+					   (<a href="/{{shortdate}}/{{commit}}/packages/{{p2}}.html" version="{{v2|replace(".","_")}}" class="package-backlink">{{ p2 }}</a>
+					   (= <a href="/{{shortdate}}/{{commit}}/packages/{{p2}}.html" version="{{v2|replace(".","_")}}" class="version-backlink">{{ v2 }}</a>) </li>
 					 {% endfor %}
 				   </ul></p>
 				   ,that is/are an indirect dependency of {{ name }}, is/are broken.

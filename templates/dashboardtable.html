@@ -1,0 +1,29 @@
+{% extends "templates/page.html" %}
+{% block title %}Maintainers' Dashboard{% endblock %}
+{% block intro %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <table id="backlog-table" class="table table-hover table-condensed">
+	<thead>
+    <tr><th>Maintainer</th><th>RSS</th><th>Statistics</th></tr>
+	</thead>
+	<tbody>
+  {% for maintainer,data in bymaintainer %}
+    <tr>
+      <td><a href="/{{shortdate}}/{{commit}}/dashboard/{{maintainer}}.html">{{maintainer}}</a></td>
+      <td><a href="/rss/{{maintainer}}.rss">Subscribe</a></td>
+      <td>
+        <p>Total: {{data['totalnames']}}</p>
+        {#
+        <p>Broken: {{data['broken']}}</p>
+        <p>Partial: {{data['partial']}}</p>
+        #}
+      </td>
+    </tr>
+  {% endfor %}
+	</tbody>
+  </table>
+</div>
+{% endblock %}
