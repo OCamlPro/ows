@@ -296,8 +296,9 @@ def html_howto(options,summaryreport,switches):
     fname = os.path.join(options['dirname'],"howto.html")
     save_page(output,fname)
 
-def json_weather(options,date,aggregatereport):
+def json_weather(options,summaryreport,aggregatereport):
     print "Compiling JSON Report ..."
+    date = summaryreport['date']
     r = {}
     for name,versions in aggregatereport.iteritems() :
         for ver,data in versions.iteritems() :
@@ -374,8 +375,6 @@ def html_weather(options,aggregatereport,summaryreport,switches):
     output = template.render({'summary' : summaryreport, 'switches': switches, 'baseurl' : options['baseurl'], 'allpackages' : True})
     fname = os.path.join(options['dirname'],"weather.html")
     save_page(output,fname)
-
-    json_weather(options,summaryreport['date'],aggregatereport)
 
 def rss_weather(options,history,summaryreport):
     print "Generating RSS feed"
@@ -580,6 +579,7 @@ def main():
     parser = argparse.ArgumentParser(description='create ows static pages')
     #parser.add_argument('-v', '--verbose')
     #parser.add_argument('-d', '--debug', action='store_true', default=False)
+    parser.add_argument('--nopages', action='store_true', help="Compute only json and rss feeds", default=False)
     parser.add_argument('--nocache', action='store_true', help="Do not use cache files (if any)", default=False)
     parser.add_argument('--nosvg', action='store_true', help="Do not generate svg files", default=False)
     parser.add_argument('--baseurl', type=str, help="base url", default="http://localhost:8000/")
@@ -602,18 +602,19 @@ def main():
         sr['weather'] = weather(sr['report'],sr['weather'])
     else :
         sr['weather'] = {}
+
     rss_weather(options,h.get('bymaintainer',{}).items(),sr)
-
-    html_backlog(options,h.get('backlog',{}).items(),sr)
-
-    plot(options,h.get('plotdata',{}).items())
+    json_weather(options,sr,ar)
+    
+    if args.nopages == False :
+        html_weather(options,ar,sr,switches)
+        html_summary(options,sr,switches)
+        html_howto(options,sr,switches)
+        html_credits(options,sr)
+        html_backlog(options,h.get('backlog',{}).items(),sr)
+        plot(options,h.get('plotdata',{}).items())
 
     save_history(args.history,h,sr,switches)
-
-    html_weather(options,ar,sr,switches)
-    html_summary(options,sr,switches)
-    html_howto(options,sr,switches)
-    html_credits(options,sr)
 
     print
 

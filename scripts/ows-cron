@@ -38,35 +38,39 @@ function daterange {
   done
 }
 
-NOCACHE=
-if [ $action == "run" ]; then
+OWSRUNOPT=
+if [ $action == "runheadless" ]; then
+  OWSRUNOPT="--nopages"
+  echo "Cron Run (all commits)"
+  ${OWSUPDATE} -a $origin
+elif [ $action == "run" ]; then
   echo "Daily Run (last commit)"
   ${OWSUPDATE} -t
 elif [ $action == "reset" ]; then
-  NOCACHE="--nocache --nosvg"
-  echo "OWS Reset from 2012-05-19 ($NOCACHE)"
+  OWSRUNOPT="--nocache --nosvg"
+  echo "OWS Reset from 2012-05-19 ($OWSRUNOPT)"
   rm -f ${REPORTDIR}/history.pickle
   ${OWSUPDATE} -f 2012-05-19
   origin=2012-05-19
 elif [ $action == "resetpages" ]; then
-  NOCACHE="--nosvg"
-  echo "OWS Reset from 2012-05-19 ($NOCACHE)"
+  OWSRUNOPT="--nosvg"
+  echo "OWS Reset from 2012-05-19 ($OWSRUNOPT)"
   rm -f ${REPORTDIR}/history.pickle
   origin=2012-05-19
 elif [ $action == "replay" ]; then
-  NOCACHE="--nosvg"
-  echo "Replay transation of the last $daysago days ($NOCACHE)"
+  OWSRUNOPT="--nosvg"
+  echo "Replay transation of the last $daysago days ($OWSRUNOPT)"
   ${OWSUPDATE} $origin
 elif [ $action == "replaypages" ]; then
-  NOCACHE="--nosvg"
-  echo "Replay transation (html pages only) of the last $daysago days ($NOCACHE)"
+  OWSRUNOPT="--nosvg"
+  echo "Replay transation (html pages only) of the last $daysago days ($OWSRUNOPT)"
 elif [ $action == "replayforce" ]; then
-  NOCACHE="--nocache --nosvg"
-  echo "Replay transation of the last $daysago days ($NOCACHE)"
+  OWSRUNOPT="--nocache --nosvg"
+  echo "Replay transation of the last $daysago days ($OWSRUNOPT)"
   ${OWSUPDATE} -f $origin
 elif [ $action = "runnosvg" ]; then
-  NOCACHE="--nosvg"
-  echo "Replay transations from $origin to today ($NOCACHE)"
+  OWSRUNOPT="--nosvg"
+  echo "Replay transations from $origin to today ($OWSRUNOPT)"
   ${OWSUPDATE} $origin
 fi
 
@@ -77,7 +81,7 @@ for date in $range; do
   if [ -d ${REPORTDIR}/$date ]; then
     for i in `ls -d ${REPORTDIR}/$date/*`; do
       if [ -d $i ]; then
-        ${OWSRUN} ${NOCACHE} --targetdir ${TARGETDIR} --baseurl ${BASEURL} --history ${REPORTDIR}/history.pickle $i
+        ${OWSRUN} ${OWSRUNOPT} --targetdir ${TARGETDIR} --baseurl ${BASEURL} --history ${REPORTDIR}/history.pickle $i
       else
         echo "Nothing interesting in $i"
       fi
