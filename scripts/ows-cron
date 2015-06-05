@@ -91,4 +91,6 @@ for date in $range; do
   fi
 done
 
-${OWSARCHIVE} ${TARGETDIR}
+if [ $action != "runheadless" ]; then
+  ${OWSARCHIVE} ${TARGETDIR}
+fi
