@@ -57,6 +57,11 @@ elif [ $action == "resetpages" ]; then
   echo "OWS Reset from 2012-05-19 ($OWSRUNOPT)"
   rm -f ${REPORTDIR}/history.pickle
   origin=2012-05-19
+elif [ $action == "resetheadless" ]; then
+  OWSRUNOPT="--nosvg --nopages --nocache"
+  echo "OWS Reset from 2012-05-19 ($OWSRUNOPT)"
+  rm -f ${REPORTDIR}/history.pickle
+  origin=2012-05-19
 elif [ $action == "replay" ]; then
   OWSRUNOPT="--nosvg"
   echo "Replay transation of the last $daysago days ($OWSRUNOPT)"
