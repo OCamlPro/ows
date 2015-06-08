@@ -178,17 +178,22 @@ def aggregate(d):
                     indirect = None
                     dc,dm = [],[] # direct conflicts, direct missing
                     idc,idm = [], {} # indirect conflicts, indirect missing
+                    package['maintainer'] = package['maintainer'].replace(' and ',' , ')
                     if 'maintainer' in package:
-                        (namestr,addr) = parseaddr(package['maintainer'])
+                        (namestr,addr) = parseaddr(package['maintainer'].split(',')[0])
                         if len(addr.encode('utf8')) > 0 :
                             maintainer = addr
                         elif len(namestr.encode('utf8')) > 0 :
-                            maintainer = urlencode_filter(namestr)
+                            maintainer = urlencode_filter(package['maintainer'])
                         else :
                             maintainer = "orphan"
                     else :
                         maintainer = "orphan"
-                    info = (switch,name,ver,package['status'])
+                    info = {'switch' : switch ,
+                            'name' : name ,
+                            'ver' : ver,
+                            'status' : package['status'] ,
+                            'maintainer' : package['maintainer'] if not maintainer == "orphan" else "orphan"}
                     bymaintainer.setdefault(maintainer,[info]).append(info)
                     if 'reasons' in package :
                         for p in package['reasons'] :
@@ -263,7 +268,6 @@ def aggregate(d):
 # we assume the monotonicity of the opam repo
 def weather(report, weather_yesterday) :
     weather = {}
-    print weather_yesterday
     for p,v in report.iteritems() :
         if v['percent'] == 0 :
             weather_today = "sunny"
@@ -330,7 +334,7 @@ def html_dashboard(options,aggregatereport,summaryreport,switches):
     shortdate = summaryreport['date'].strftime("%Y-%m-%d")
     commit = summaryreport['commit']
     pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=len(aggregatereport))
-    template = j2_env.get_template('templates/dashboard.html')
+    template = j2_env.get_template('templates/packagedashboard.html')
 
     i = 0
     pbar.start()
@@ -342,13 +346,19 @@ def html_dashboard(options,aggregatereport,summaryreport,switches):
         items = []
         del summary['report'];
         summary['report'] = {}
-        for (switch,name,ver,status) in packages :
+        maintainerstr = ""
+        for pkg in packages :
+            name = pkg['name']
+            maintainerstr = pkg['maintainer']
             summary['report'][name] = summaryreport['report'][name]
         summary['report'] = OrderedDict(sorted(summary['report'].items(), key=lambda x : x[1]['percent'],reverse=True))
 
-        dashboardtable.append((maintainer,{ 'totalnames' : len(summary['report']), 'broken': 0, 'partial': 0 }))
+        dashboardtable.append((maintainer,{ 'maintainer' : maintainerstr, 'totalnames' : len(summary['report']), 'broken': 0, 'partial': 0 }))
 
-        output = template.render({'shortdate' : shortdate, 'commit' : commit, 'summary' : summary, 'switches': switches, 'allpackages' : True})
+        output = template.render({
+            'shortdate' : shortdate, 'commit' : commit, 
+            'maintainer' : maintainerstr, 'summary' : summary, 
+            'switches': switches, 'allpackages' : True})
         fname = os.path.join(options['dirname'],"dashboard","%s.html" % maintainer)
         save_page(output,fname)
     pbar.finish()
@@ -430,11 +440,13 @@ def rss_weather(options,history,summaryreport):
         i += 1
         pbar.update(i)
         items = []
+        maintainerstr = ""
         for date,bymaintainer in history :
             commit = summaryreport['commit']
             if maintainer in bymaintainer :
                 description = []
-                for switch,l in groupby(bymaintainer[maintainer],key=lambda x : x[0]):
+                maintainerstr = bymaintainer[maintainer][0]['maintainer']
+                for switch,l in groupby(bymaintainer[maintainer],key=lambda x : x['switch']):
                     description.append((switch,list(l)))
                 items.append({
                     'date' : formatdate(float(date.strftime('%s'))),
@@ -445,6 +457,7 @@ def rss_weather(options,history,summaryreport):
         output = template.render({
             'baseurl' : options['baseurl'],
             'maintainer' : maintainer,
+            'maintainerstr' : maintainerstr,
             'items' : items })
         fname = os.path.join(options['targetdir'],'rss','%s.rss' % maintainer)
         save_page(output,fname)

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Maintainer Status Board {{ maintainer }}</title>
+    <title>Maintainer Status Board {{ maintainerstr }}</title>
     <link>{{ baseurl }}/rss/{{ maintainer | urlencode }}.rss</link>
     <description></description>
     <language>en</language>
@@ -17,10 +17,11 @@
         {% for (switch,l) in item['description'] %}
         <h3>{{ switch }}</h3>
         <ol>
-          {% for (switch,name,version,status) in l %}
+          {% for pkg in l %}
           <li>
-            <a href="{{ baseurl }}/{{ item['shortdate'] }}/{{ item['commit'] }}/packages/{{ name }}-page.html" >{{ name }}</a> 
-            {{ version }} : {{ status }}</li>
+            <a href="{{ baseurl }}/{{ item['shortdate'] }}/{{ item['commit'] }}/packages/{{ pkg['name'] }}-page.html" >{{ pkg['name'] }}</a> 
+            {{ pkg['ver'] }} : {{ pkg['status'] }}
+          </li>
           {% endfor %}
         </ol>
         {% endfor %}

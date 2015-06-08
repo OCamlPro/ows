@@ -12,7 +12,7 @@
 	<tbody>
   {% for maintainer,data in bymaintainer %}
     <tr>
-      <td><a href="/{{shortdate}}/{{commit}}/dashboard/{{maintainer}}.html">{{maintainer}}</a></td>
+      <td><a href="/{{shortdate}}/{{commit}}/dashboard/{{maintainer}}.html">{{ data['maintainer'] | escape }}</a></td>
       <td><a href="/rss/{{maintainer}}.rss">Subscribe</a></td>
       <td>
         <p>Total: {{data['totalnames']}}</p>

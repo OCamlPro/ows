@@ -1,11 +1,10 @@
 {% extends "templates/page.html" %}
 
 
-{% block title %}{{ maintainer }} Dashboard{% endblock %}
+{% block title %}{{ maintainer | escape }} Dashboard{% endblock %}
 
 {% block intro %}
-This page lists all packages associated to {{ maintainer }}.
-You can also subscribe to the <a href="/rss/{{ maintainer }}">RSS feed</a>
+This page lists all packages associated to {{ maintainer | escape }}.
 {% endblock %}
 
 {% block content %}
@@ -62,7 +61,7 @@ You can also subscribe to the <a href="/rss/{{ maintainer }}">RSS feed</a>
 			  </span>
 			{% elif summary['report'][name][s] == 'partial' %}
 			  <span style="color:orange"
-					title="Some versions of this package cannot be used with OCaml {{s}}">
+				`	title="Some versions of this package cannot be used with OCaml {{s}}">
 				<span class="glyphicon glyphicon-fire"></span>
 			  </span>
 			{% elif summary['report'][name][s] == 'ok' %}
