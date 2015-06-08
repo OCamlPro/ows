@@ -17,7 +17,7 @@
 		<tbody>
 		{% for version, result in versions.iteritems() %}
 		<tr>
-		  <td>{{version}}</a></td>
+		  <td><a target="_blank" href="http://opam.ocaml.org/packages/{{name}}/{{name}}.{{version}}/">{{version}}</a></td>
 		  {% for switch in switches %}
 			<td>
 			  {% if result[switch] is defined %}
