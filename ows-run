@@ -402,14 +402,14 @@ def html_weather(options,aggregatereport,summaryreport,switches):
         save_page(output,fname)
     pbar.finish()
 
-    print "Compiling SVG files..."
-    i = 0
-    pbar.start()
-    for name,versions in aggregatereport.iteritems() :
-        i += 1
-        pbar.update(i)
+    if not options['nosvg'] :
+        print "Compiling SVG files..."
+        i = 0
+        pbar.start()
+        for name,versions in aggregatereport.iteritems() :
+            i += 1
+            pbar.update(i)
 
-        if not options['nosvg'] :
             for switch in switches :
                 for version,result in versions.iteritems() :
                     if switch in result and result[switch][0] == 'broken' :
@@ -417,7 +417,7 @@ def html_weather(options,aggregatereport,summaryreport,switches):
                         if os.path.exists(dotname) :
                             dotfile = pydot.graph_from_dot_file(dotname)
                             dotfile.write_svg(os.path.join(options['dirname'],switch,"%s.%s.svg" % (name,version)))
-    pbar.finish()
+        pbar.finish()
 
     template = j2_env.get_template('templates/weather.html')
 
