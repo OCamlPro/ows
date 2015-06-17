@@ -40,7 +40,12 @@ function archive {
   mkdir -p latest
   lastday=$(ls -d1 ????-??-?? | sort -r | head -1)
   lastcommit=$(cat ${REPORTDIR}/$lastday/commits | head -1)
-  ln -s ../$lastday/$lastcommit latest/today
+  if [ -f $lastday/$lastcommit/index.html ]; then
+    echo "Update Latest sym link ../$lastday/$lastcommit"
+    ln -s ../$lastday/$lastcommit latest/today
+  else
+    echo "Do not update symlink. OWS could be outdated"
+  fi
 }
 
 # Usage info
