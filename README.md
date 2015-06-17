@@ -28,6 +28,10 @@ Author(s) : Pietro Abate <pietro . abate @ pps . univ - paris - diderot . fr>
  * optipng (for png compression)
  * hardlink (to hardlink together duplicate files)
 
+#### For ows-wsgi
+* python-bottle
+* python-git
+   
 ## Setup
 
 Modify all relevant variables in ''ows.config-default'' to match your environment
