@@ -36,19 +36,23 @@ Author(s) : Pietro Abate <pietro . abate @ pps . univ - paris - diderot . fr>
 
 Modify all relevant variables in ''ows.config-default'' to match your environment
   
-Run ''ows-update -s'' to checkout the opam repository and configure it for ows
+Run ''DEFAULTS=ows.config-default ows-update -s'' to checkout the opam repository and configure it for ows
 
 Copy the directories ''css fonts images js'' to the target html directory
 
 The directory scripts contains ''ows-cron'' that can be schedule to run at 
 regular intervals
 
+To add a new switch, first add the switch label in the configuation file, then run
+''DEFAULTS=ows.config-default ./ows-update -u'' for the changes to take place. The next
+run of ows will include the analysis for the new switch
+
 ## How To Use ?
 
-''ows-update -s'' initializes a local opam repository and initialize the html
+''DEFAULTS=ows.config-default ows-update -s'' initializes a local opam repository and initialize the html
 root directory.
 
-''ows-update 2015-03-12 2015-03-13''
+''DEFAULTS=ows.config-default ows-update 2015-03-12 2015-03-13''
 
 It creates a directory where it stores all the opam universes and the result of
 distcheck and 
@@ -58,15 +62,15 @@ distcheck and
 aggregates and build one ows report. Usually ows.py is run in a for cycle :
 
     for i in reports/2015-03-2*/* ; do 
-      ./ows-run --baseurl "http://ows.irill.org" $i; 
+      DEFAULTS=ows.config-default ./ows-run --baseurl "http://ows.irill.org" $i; 
     done
 
 ''ows-archive'' takes care of archiving all html reports older then 10 days.
 it can be run from a cron script. Ex :
 
-    ./ows-archive html 11
+    DEFAULTS=ows.config-default ./ows-archive html 11
 
-''scripts/ows-cron'' can be run regularly and takes care of keeping the repository
+''DEFAULTS=ows.config-default scripts/ows-cron'' can be run regularly and takes care of keeping the repository
 up to date and to generate the ows html pages. It has a number of debugging options.
 
-''ows-wucgi'' is a wucgi server meant to work in conjunction with a web server.
+''DEFAULTS=ows.config-default ows-wsgi'' is a wsgi server meant to work in conjunction with a web server.
