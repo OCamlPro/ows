@@ -25,8 +25,9 @@ j2_env = Environment(loader=FileSystemLoader(TEMPLATES),trim_blocks=True,bytecod
 
 app = application = Bottle()
 
-os.environ = owsdiff.source(os.getenv('DEFAULTS',"/etc/default/ows"))
+os.environ = owsdiff.source(os.getenv('DEFAULTS',"/etc/default/ows2"))
 VERSIONS = "3.12.1 4.00.1 4.01.0 4.02.0 4.02.1"
+GITURL = 'git://github.com/ocaml/opam-repository'
 options = {
         'versions'  : os.getenv('VERSIONS',VERSIONS).split(),
         'distcheck' : os.getenv('DISTCHECK','dose-distcheck'),
@@ -35,7 +36,7 @@ options = {
         'opamroot'  : os.path.join(os.getenv('DATADIR','/tmp'),"opam-root"),
         'opamcomp'  : os.path.join(os.getenv('DATADIR','/tmp'),"opam-compilers"),
         'owscache'  : os.path.join(os.getenv('DATADIR','/tmp'),"cache"),
-        'giturl'    : 'git://github.com/ocaml/opam-repository',
+        'giturl'    : None,
         'nocache'   : False }
 
 def makeoptions(nocache,giturl) :
@@ -47,6 +48,7 @@ def makeoptions(nocache,giturl) :
     options['opamroot'] = os.path.join(os.getenv('DATADIR','/tmp'),reponame,"opam-root")
     options['opamcomp'] = os.path.join(os.getenv('DATADIR','/tmp'),reponame,"opam-compilers")
     options['owscache'] = os.path.join(os.getenv('DATADIR','/tmp'),reponame,"cache")
+    options['giturl'] = giturl
     
     return options
 
@@ -55,7 +57,7 @@ def dataget(data) :
     commit2 = data.get('commit2',None)
     patch = data.get('patch',None)
     nocache = True if (data.get('nocache',"False")) == "True" else False
-    giturl = data.get('giturl',options['giturl'])
+    giturl = data.get('giturl',GITURL)
     return (commit1,commit2,patch,nocache,giturl)
 
 @app.get('/compare/form')

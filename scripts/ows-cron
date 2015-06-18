@@ -70,7 +70,7 @@ elif [ $action == "replaypages" ]; then
   OWSRUNOPT="--nosvg"
   echo "Replay transation (html pages only) of the last $daysago days ($OWSRUNOPT)"
 elif [ $action == "replayforce" ]; then
-  OWSRUNOPT="--nocache --nosvg"
+  OWSRUNOPT="--nocache"
   echo "Replay transation of the last $daysago days ($OWSRUNOPT)"
   ${OWSUPDATE} -f $origin
 elif [ $action = "runnosvg" ]; then
