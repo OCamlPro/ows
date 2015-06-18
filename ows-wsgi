@@ -91,13 +91,18 @@ def submit():
             diff = owsdiff.patch(commit1,patchfile,options)
         except GitCommandError :
             error = "Apply Patch Failed"
+        except owsdiff.OwsDiffError as e :
+            error = e.value
+
         os.remove(patchfile)
     elif commit2 :
         try :
             diff = owsdiff.run(commit1,commit2,options)
         except GitCommandError :
             error = "Checkout commit Failed"
- 
+        except owsdiff.OwsDiffError as e :
+            error = e.value
+
     template = j2_env.get_template('templates/compare/modal.html')
     output = template.render({'report' : diff, 'error' : message, 'commit1' : commit1, 'commit2' : commit2, 'baseurl' : BASEURL})
     return output
@@ -126,6 +131,9 @@ def jsondiff():
         except GitCommandError : 
             status = "fail"
             message = "Apply Patch Failed"
+        except owsdiff.OwsDiffError as e :
+            status = "fail"
+            message = e.value
 
         os.remove(patchfile)
     elif commit2 :
@@ -134,6 +142,9 @@ def jsondiff():
         except GitCommandError :
             status = "fail"
             message = "Checkout commit Failed"
+        except owsdiff.OwsDiffError as e :
+            status = "fail"
+            message = e.value
 
     response.content_type = 'application/json'
     return json.dumps({ 'status' : status, 'message' : message, 'result' : diff})

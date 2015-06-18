@@ -44,7 +44,16 @@ os.getlogin = lambda: pwd.getpwuid(os.getuid())[0]
 import git, os, shutil
 from git.exc import GitCommandError
 
+class OwsDiffError(Exception):
+    def __init__(self, value):
+        self.value = value
+
 FNULL = open(os.devnull, 'w')
+
+def is_opamrepo (repo) :
+    p = os.path.exists(os.path.join(repo,"packages"))
+    r = os.path.exists(os.path.join(repo,"repo"))
+    return (p and r)
 
 def initrepo (options) :
     env={'OPAMROOT' : options['opamroot']}
@@ -73,9 +82,14 @@ def initrepo (options) :
 
   ## Checkout/update the real opam-repository
 
+    print options
+
     if not os.path.exists(options['opamrepo']) :
-        print "Cloning repo from ", options['giturl']
-        git.Repo.clone_from(options['giturl'], options['opamrepo'])
+        if options['giturl'] :
+            print "Cloning repo from ", options['giturl']
+            git.Repo.clone_from(options['giturl'], options['opamrepo'])
+        else :
+            raise OwsDiffError("GIT url not valid. Cannot Clone Repository. Abort.")
     else :
         repo = git.Repo(options['opamrepo'])
         repo.remotes.origin.fetch()
@@ -172,6 +186,8 @@ def replay(commit,options) :
     print "Checkout Commit %s" % commit
     if not os.path.exists(os.path.dirname(options['opamrepo'])):
         initrepo(options)
+    if not is_opamrepo(options['opamrepo']) :
+        raise OwsDiffError("Empty Repository. Abort")
 
     repo = git.Repo(options['opamrepo'])
     repo.git.reset('--hard')
@@ -315,8 +331,11 @@ def patch(commit,patchfile,options):
 
     if not os.path.exists(os.path.dirname(options['opamrepo'])):
         initrepo(options)
+    if not check_opamrepo(options['opamrepo']) :
+        raise OwsDiffError("Empty Repository. Abort")
 
     repo = git.Repo(options['opamrepo'])
+
     repo.git.reset('--hard')
     repo.git.clean('-xdf')
     repo.remotes.origin.fetch()
