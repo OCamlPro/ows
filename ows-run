@@ -25,6 +25,7 @@ import datetime as dt
 import json
 import pydot
 
+from subprocess import Popen, PIPE, STDOUT
 from progressbar import Bar, Percentage, ProgressBar
 
 from email.utils import parseaddr, formatdate
@@ -61,6 +62,13 @@ def urlencode_filter(s):
     s = urllib.quote_plus(s)
     return Markup(s)
 j2_env.filters['urlencode'] = urlencode_filter
+
+def bts_filter(s):
+    text = "Dear Maintainer. The package %s is not usable. \nPlease check <a http://ows.irill.org/packages/%s> OWS for details</a>" % s
+    title = "OWS. The package %s is partially broken" % s
+    url = "https://github.com/ocaml/opam-repository/issues/new"
+    return url + "?title=%s&body=%s" % (urllib.quote_plus(title), urllib.quote_plus(body))
+j2_env.filters['bts_filter'] = bts_filter
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, o):
@@ -635,6 +643,17 @@ def save_history(filename,history,sr,switches):
         pickle.dump(newsummary,f)
         f.close()
     signal.signal(signal.SIGINT, s)
+
+def source(owsconf):
+
+    command = ['bash', '-c', 'set -a && source %s && env' % owsconf ]
+    proc = Popen(command, stdout=PIPE)
+    for line in proc.stdout:
+      (key, _, value) = line.partition("=")
+      os.environ[key] = value.strip()
+    proc.communicate()
+
+    return os.environ
 
 def main():
     parser = argparse.ArgumentParser(description='create ows static pages')
