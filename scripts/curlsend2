@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#set -x 
+
+#d817d9dbcde11466a23ac52ff7846744d6a48777
+commit1=$1
+commit2=$2
+giturl=${3:-"git://github.com/opam/opam-repository"}
+
+tempfile=$(mktemp)
+cat<<EOF > ${tempfile}
+{"commit1": "${commit1}",
+ "commit2": "${commit2}",
+ "giturl" : "${giturl}"
+}
+EOF
+
+curl -s -H "Content-Type: application/json" --data @${tempfile} http://ows.irill.org/compare/api | python jsoncheck.py
+#curl -H "Content-Type: application/json" --data @${tempfile} http://localhost:8080/compare/api
+
+rm ${tempfile}
