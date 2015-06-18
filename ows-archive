@@ -2,8 +2,6 @@
 
 #set -x 
 
-trap 'echo you hit Ctrl-C/Ctrl-\, now exiting..; exit' SIGINT SIGQUIT
-
 #################### Config Variables ########################
 DEFAULTS=${DEFAULTS:-"/etc/default/ows"}
 
@@ -16,6 +14,14 @@ fi
 [ -r $DEFAULTS ] && . $DEFAULTS
 
 ######################################################################
+
+function cleanup() {
+  echo "you hit Ctrl-C/Ctrl-\, now exiting..";
+  echo "Kill all subprocesses"
+  [[ -z "$(jobs -pr)" ]] || kill $(jobs -pr);
+  exit
+}
+trap 'cleanup' SIGINT SIGQUIT
 
 function archive {
   local age=$(date --date="-$1 days" '+%s')

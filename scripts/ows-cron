@@ -2,8 +2,6 @@
 
 #set -x 
 
-trap 'echo you hit Ctrl-C/Ctrl-\, now exiting..; exit' SIGINT SIGQUIT
-
 #################### Config Variables ########################
 DEFAULTS=${DEFAULTS:-"/etc/default/ows"}
 
@@ -17,6 +15,25 @@ fi
 [ -r $DEFAULTS ] && . $DEFAULTS
 
 ######################################################################
+
+LOCK=$TMPDIR/ows-cron.lock
+function cleanup() {
+  echo "you hit Ctrl-C/Ctrl-\, now exiting..";
+  echo "Kill all subprocesses"
+  [[ -z "$(jobs -pr)" ]] || kill $(jobs -pr);
+  echo "Remove Lock"
+  rm $LOCK
+  exit
+}
+trap 'cleanup' SIGINT SIGQUIT
+
+if [ -f $LOCK ]; then
+  echo "Lock detected. An other instance of ows-cron is running"
+  echo "If this is not the care remove $LOCK"
+  exit 0
+fi
+
+touch $LOCK
 
 action=${1:-"run"}
 daysago=${2:-"0"}
@@ -99,3 +116,6 @@ done
 if [ $action != "runheadless" ]; then
   ${OWSARCHIVE} ${TARGETDIR}
 fi
+
+echo "All Done. Remove Lock"
+rm $LOCK
