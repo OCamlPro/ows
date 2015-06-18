@@ -101,13 +101,22 @@ export REPORTDIR=$REPORTDIR
 
 for date in $range; do
   if [ -d ${REPORTDIR}/$date ]; then
-    for i in `ls -d ${REPORTDIR}/$date/*`; do
-      if [ -d $i ]; then
-        ${OWSRUN} ${OWSRUNOPT} --targetdir ${TARGETDIR} --baseurl ${BASEURL} --history ${REPORTDIR}/history.pickle $i
+    if [ $action == "run" ]; then
+      lastcommit=$(cat ${REPORTDIR}/$date/commits|head -1)
+      if [ -d ${REPORTDIR}/$date/$lastcommit ]; then
+        ${OWSRUN} ${OWSRUNOPT} --targetdir ${TARGETDIR} --baseurl ${BASEURL} --history ${REPORTDIR}/history.pickle ${REPORTDIR}/$date/$lastcommit
       else
-        echo "Nothing interesting in $i"
+        echo "Nothing interesting in ${REPORTDIR}/$date/$lastcommit"
       fi
-    done
+    else
+      for i in `ls -d ${REPORTDIR}/$date/*`; do
+        if [ -d $i ]; then
+          ${OWSRUN} ${OWSRUNOPT} --targetdir ${TARGETDIR} --baseurl ${BASEURL} --history ${REPORTDIR}/history.pickle $i
+        else
+          echo "Nothing interesting in $i"
+        fi
+      done
+    fi
   else
     echo "No new commit for today"
   fi
