@@ -26,7 +26,7 @@ j2_env = Environment(loader=FileSystemLoader(TEMPLATES),trim_blocks=True,bytecod
 app = application = Bottle()
 
 os.environ = owsdiff.source(os.getenv('DEFAULTS',"/etc/default/ows2"))
-VERSIONS = "3.12.1 4.00.1 4.01.0 4.02.0 4.02.1"
+VERSIONS = "4.02.2 3.12.1 4.00.1 4.01.0 4.02.0 4.02.1"
 GITURL = 'git://github.com/ocaml/opam-repository'
 options = {
         'versions'  : os.getenv('VERSIONS',VERSIONS).split(),

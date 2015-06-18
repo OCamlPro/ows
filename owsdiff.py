@@ -52,12 +52,12 @@ def initrepo (options) :
 
     if not os.path.exists(os.path.dirname(options['opamrepo'])):
         print "Initialize ows repository ", os.path.dirname(options['opamrepo'])
-        os.makedirs(os.path.dirname(options['opamrepo']))
+        os.makedirs(os.path.dirname(options['opamrepo']),mode=0755)
 
     for v in options['versions'] :
         dirname = os.path.join(options['opamcomp'],"compilers",v,v)
         if not os.path.exists(dirname) :
-            os.makedirs(dirname)
+            os.makedirs(dirname,mode=0755)
 
         outfile = os.path.join(options['opamcomp'],"compilers",v,v,"%s.comp" % v)
         with open(outfile,'w') as f :
@@ -128,7 +128,7 @@ def runopam(reportdir,options):
     if options['nocache'] or not os.path.exists(reportdir) :
         print "Update Opam"
         if not os.path.exists(reportdir) :
-            os.makedirs(reportdir)
+            os.makedirs(reportdir,mode=0755)
         cmd = [options['opam'],'update','--quiet','--use-internal-solver']
         print ' '.join(cmd)
         proc = Popen(cmd,stdout=FNULL, stderr=STDOUT, env=env)
@@ -223,7 +223,7 @@ def load_and_parse(reportdir,commit1,commit2,options):
         picklefile = os.path.join(reportdir,'data.pickle')
         print "Load and Parse : %s" % reportdir
         if not os.path.exists(reportdir) :
-            os.makedirs(reportdir)
+            os.makedirs(reportdir,mode=0755)
         if options['nocache'] and os.path.exists(picklefile) :
             os.remove(picklefile)
 
