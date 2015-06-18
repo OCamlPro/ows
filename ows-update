@@ -224,9 +224,10 @@ init=0
 today=0
 limit=0
 force=0
+update=0
 
 OPTIND=1
-while getopts "hvstaf" opt; do
+while getopts "hvstafu" opt; do
     case "$opt" in
         h)
             show_help
@@ -239,6 +240,8 @@ while getopts "hvstaf" opt; do
         t)  today=1
             ;;
         f)  force=1
+            ;;
+        u)  update=1
             ;;
         a)  limit=1
             ;;
@@ -264,6 +267,12 @@ if [ $init == 1 ]; then
     echo "User ${0##*/} -s -f to overwrite"
     exit 0
   fi
+fi
+
+if [ $update == 1 ]; then
+  echo "Update Opam repository in ${OPAMROOT}"
+  setup
+  exit 0
 fi
 
 from="2012-05-19"

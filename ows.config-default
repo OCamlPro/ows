@@ -1,7 +1,7 @@
 BASEDIR=~/Projects/repos/ows
 
 # Ocaml Releases (add here a new one)
-VERSIONS=${VERSIONS:-"4.02.1 4.01.0 4.02.0 4.00.1 3.12.1"}
+VERSIONS=${VERSIONS:-"4.02.2 4.02.1 4.01.0 4.02.0 4.00.1 3.12.1"}
 
 # distcheck binary
 DISTCHECK=~/Projects/repos/mancoosi-tools/dose/dose-distcheck
