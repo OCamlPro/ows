@@ -96,17 +96,30 @@ elif [ $action = "runnosvg" ]; then
   ${OWSUPDATE} $origin
 fi
 
+if [ $action != "runheadless" ]; then
+  echo "ARCHIVE"
+  ${OWSARCHIVE} ${TARGETDIR}
+fi
+
 range=$(daterange ${origin} ${currentdate})
 export REPORTDIR=$REPORTDIR
 
 for date in $range; do
   if [ -d ${REPORTDIR}/$date ]; then
     if [ $action == "run" ]; then
-      lastcommit=$(cat ${REPORTDIR}/$date/commits|head -1)
-      if [ -d ${REPORTDIR}/$date/$lastcommit ]; then
-        ${OWSRUN} ${OWSRUNOPT} --targetdir ${TARGETDIR} --baseurl ${BASEURL} --history ${REPORTDIR}/history.pickle ${REPORTDIR}/$date/$lastcommit
+      if [ -d ${REPORTDIR}/$date ]; then
+        if [ -f ${REPORTDIR}/$date/commits ]; then
+          lastcommit=$(cat ${REPORTDIR}/$date/commits | head -1)
+          if [ -d ${REPORTDIR}/$date/$lastcommit ]; then
+            ${OWSRUN} ${OWSRUNOPT} --targetdir ${TARGETDIR} --baseurl ${BASEURL} --history ${REPORTDIR}/history.pickle ${REPORTDIR}/$date/$lastcommit
+          else
+            echo "Nothing interesting in ${REPORTDIR}/$date/$lastcommit"
+          fi
+        else
+          echo "${REPORTDIR}/$date/commits does not exists. Skip run"
+        fi
       else
-        echo "Nothing interesting in ${REPORTDIR}/$date/$lastcommit"
+        echo "${REPORTDIR}/$date does not exists. Skip run"
       fi
     else
       for i in `ls -d ${REPORTDIR}/$date/*`; do
@@ -121,10 +134,6 @@ for date in $range; do
     echo "No new commit for today"
   fi
 done
-
-if [ $action != "runheadless" ]; then
-  ${OWSARCHIVE} ${TARGETDIR}
-fi
 
 echo "All Done. Remove Lock"
 rm $LOCK
