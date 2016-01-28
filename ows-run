@@ -670,34 +670,37 @@ def main():
 
     print "Considering ", args.reportdir[0]
     (switches,ar,sr) = load_or_parse(args.reportdir[0],args.nocache)
-    options = {
-            'dirname' : setup(sr,switches,args.targetdir),
-            'targetdir' : args.targetdir,
-            'baseurl' : args.baseurl ,
-            'reportdir' : args.reportdir[0],
-            'nosvg' : args.nosvg}
-
-    h = load_history(args.history)
-    if 'weather' in sr :
-        sr['weather'] = weather(sr['report'],sr['weather'])
+    if sr['date'] is None :
+        print "Nothing to do. Skip Run"
     else :
-        sr['weather'] = {}
+        options = {
+                'dirname' : setup(sr,switches,args.targetdir),
+                'targetdir' : args.targetdir,
+                'baseurl' : args.baseurl ,
+                'reportdir' : args.reportdir[0],
+                'nosvg' : args.nosvg}
 
-    rss_weather(options,h.get('bymaintainer',{}).items(),sr)
-    json_weather(options,sr,ar)
-    
-    if args.nopages == False :
-        html_weather(options,ar,sr,switches)
-        html_dashboard(options,ar,sr,switches)
-        html_summary(options,sr,switches)
-        html_howto(options,sr,switches)
-        html_credits(options,sr)
-        html_backlog(options,h.get('backlog',{}).items(),sr)
-        plot(options,h.get('plotdata',{}).items())
+        h = load_history(args.history)
+        if 'weather' in sr :
+            sr['weather'] = weather(sr['report'],sr['weather'])
+        else :
+            sr['weather'] = {}
 
-    save_history(args.history,h,sr,switches)
+        rss_weather(options,h.get('bymaintainer',{}).items(),sr)
+        json_weather(options,sr,ar)
+        
+        if args.nopages == False :
+            html_weather(options,ar,sr,switches)
+            html_dashboard(options,ar,sr,switches)
+            html_summary(options,sr,switches)
+            html_howto(options,sr,switches)
+            html_credits(options,sr)
+            html_backlog(options,h.get('backlog',{}).items(),sr)
+            plot(options,h.get('plotdata',{}).items())
 
-    print
+        save_history(args.history,h,sr,switches)
+
+        print
 
 if __name__ == '__main__':
     main()

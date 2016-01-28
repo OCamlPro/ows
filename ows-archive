@@ -45,14 +45,52 @@ function archive {
   rm -Rf latest
   mkdir -p latest
   lastday=$(ls -d1 ????-??-?? | sort -r | head -1)
-  lastcommit=$(cat ${REPORTDIR}/$lastday/commits | head -1)
-  if [ -f $lastday/$lastcommit/index.html ]; then
-    echo "Update Latest sym link ../$lastday/$lastcommit"
-    ln -s ../$lastday/$lastcommit latest/today
+  if [ -d ${REPORTDIR}/$lastday ]; then
+    if [ -f ${REPORTDIR}/$lastday/commits ]; then
+      lastcommit=$(cat ${REPORTDIR}/$lastday/commits | head -1)
+      if [ -f $lastday/$lastcommit/index.html ]; then
+        echo "Update Latest sym link $lastday/$lastcommit"
+        if [ -d $lastday/$lastcommit ]; then
+          ln -s ../$lastday/$lastcommit latest/today
+        else
+          echo "$lastday/$lastcommit does not exists. OWS could be outdated"
+        fi
+      else
+        echo "$lastday/$lastcommit/index.html does not exists. OWS could be outdated"
+      fi
+    else
+      echo "${REPORTDIR}/$lastday/commits does not exists. OWS could be outdated"
+    fi
   else
-    echo "Do not update symlink. OWS could be outdated"
+    echo "Nothing new. Carry On"
+  fi
+  if [ ! -e latest/today ]; then
+    echo "Symlink BROKEN. SITE DOWN"
   fi
 }
+
+function archive-reports {
+  local age=$(date --date="-$1 days" '+%s')
+  local dir=$2
+  
+  cd $dir
+  mkdir -p $dir/archive
+
+  for i in $dir/*; do
+    d=$(basename $i)
+    if [[ $d == 20* ]]; then
+      date=$(date --date "$d" '+%s')
+      if [ $? = 0 ]; then
+        if [ $date -le $age ]; then
+          echo "Create Archive archive/$d.tgz"
+          GZIP='--rsyncable' tar zcf archive/$d.tgz $i
+          rm -Rf $i
+        fi
+      fi
+    fi
+  done
+}
+
 
 # Usage info
 show_help() {
@@ -102,19 +140,22 @@ else
 fi
 
 if hash optipng 2>/dev/null ; then
-  echo "PNG compression"
-  find ${TARGETDIR}/$(date +%Y-%m-%d) -name plot.png -exec optipng {} \;
+  if [ -d ${TARGETDIR}/$(date +%Y-%m-%d) ]; then
+    echo "PNG compression"
+    find ${TARGETDIR}/$(date +%Y-%m-%d) -name plot.png -exec optipng {} \;
+  fi
 fi
 
 if hash hardlink 2>/dev/null ; then
   if [ pgrep "hardlink" 2> /dev/null ]; then
     echo "Skip hardlink : already running"
   else
-    echo "Remove duplicates file (in the background)"
-    hardlink ${TARGETDIR} &
+    echo "Remove duplicates file"
+    hardlink ${TARGETDIR}
   fi
 fi
 
 echo "Archiving all reports older then $age days in $dir/archive"
 archive $age $dir
+archive-reports $age /srv/data/ows/reports
 #rsync -avz html/ hazel.rocq.inria.fr:web/public_html/tmp/html/

@@ -331,7 +331,7 @@ def patch(commit,patchfile,options):
 
     if not os.path.exists(os.path.dirname(options['opamrepo'])):
         initrepo(options)
-    if not check_opamrepo(options['opamrepo']) :
+    if not is_opamrepo(options['opamrepo']) :
         raise OwsDiffError("Empty Repository. Abort")
 
     repo = git.Repo(options['opamrepo'])
