@@ -42,8 +42,6 @@ function archive {
       fi
     fi
   done
-  rm -Rf latest
-  mkdir -p latest
   lastday=$(ls -d1 ????-??-?? | sort -r | head -1)
   if [ -d ${REPORTDIR}/$lastday ]; then
     if [ -f ${REPORTDIR}/$lastday/commits ]; then
@@ -51,6 +49,8 @@ function archive {
       if [ -f $lastday/$lastcommit/index.html ]; then
         echo "Update Latest sym link $lastday/$lastcommit"
         if [ -d $lastday/$lastcommit ]; then
+          rm -Rf latest
+          mkdir -p latest
           ln -s ../$lastday/$lastcommit latest/today
         else
           echo "$lastday/$lastcommit does not exists. OWS could be outdated"
